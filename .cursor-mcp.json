@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "sncf-transport": {
+      "command": "node",
+      "args": [
+        "/Users/jessybonnotte/Dev/InsideApp/SNCF/sncf-mcp-server/dist/index.js"
+      ]
+    }
+  }
+}
+
+

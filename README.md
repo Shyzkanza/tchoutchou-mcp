@@ -1,93 +1,452 @@
-# SNCF MCP Server
+# 🚂 SNCF Transport - App ChatGPT avec Interface Interactive
 
+Une application ChatGPT qui permet de rechercher des trains en France avec une **interface visuelle interactive** incluant une carte, des horaires en temps réel, et la comparaison d'itinéraires.
 
+![Version](https://img.shields.io/badge/version-1.0.0-blue)
+![Node](https://img.shields.io/badge/node-18%2B-green)
+![MCP](https://img.shields.io/badge/MCP-2024--11--05-orange)
+![Apps SDK](https://img.shields.io/badge/ChatGPT-Apps%20SDK-purple)
 
-## Getting started
+## 🎯 Qu'est-ce que c'est ?
 
-To make it easy for you to get started with GitLab, here's a list of recommended next steps.
+Cette application permet à **ChatGPT** d'accéder aux données de transport SNCF et d'afficher les résultats dans une **interface React interactive** directement dans la conversation.
 
-Already a pro? Just edit this README.md and make it your own. Want to make it easy? [Use the template at the bottom](#editing-this-readme)!
+### ✨ Fonctionnalités
 
-## Add your files
+- 🔍 **Recherche de gares** - Trouvez n'importe quelle gare en France par autocomplétion
+- 🚄 **Horaires en temps réel** - Prochains départs et arrivées en direct
+- 🗺️ **Calcul d'itinéraires** - Trajet complet avec correspondances
+- 📊 **Interface visuelle** - Composant React intégré dans ChatGPT avec :
+  - Carte interactive avec zoom adaptatif
+  - Comparaison d'itinéraires avec onglets
+  - Détails des horaires et correspondances
+  - Mode plein écran pour la carte
 
-- [ ] [Create](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#create-a-file) or [upload](https://docs.gitlab.com/ee/user/project/repository/web_editor.html#upload-a-file) files
-- [ ] [Add files using the command line](https://docs.gitlab.com/topics/git/add_files/#add-files-to-a-git-repository) or push an existing Git repository with the following command:
+### 💬 Exemple d'utilisation
+
+Dans ChatGPT, demandez simplement :
+
+> "Trouve-moi un train de Paris à Lyon pour demain matin vers 8h"
+
+ChatGPT va :
+1. Chercher les gares de Paris et Lyon
+2. Calculer les itinéraires disponibles
+3. **Afficher une interface interactive** avec carte et horaires
+
+---
+
+## 🏗️ Architecture : App ChatGPT MCP
+
+### Qu'est-ce qu'une App ChatGPT ?
+
+Les **Apps ChatGPT** (via [Apps SDK](https://developers.openai.com/apps-sdk)) permettent d'étendre ChatGPT avec :
+- **Des outils personnalisés** (appeler des APIs externes)
+- **Des interfaces visuelles** (composants React dans la conversation)
+- **Des données en temps réel** (informations actualisées)
+
+### Comment ça fonctionne ?
 
 ```
-cd existing_repo
-git remote add origin https://gitlab.com/insideapp/internal/gpt-apps/sncf-test/sncf-mcp-server.git
-git branch -M main
-git push -uf origin main
+┌─────────────┐         ┌──────────────┐         ┌──────────────┐
+│   ChatGPT   │ ◄─────► │  Serveur MCP │ ◄─────► │  API SNCF    │
+│             │  JSON   │  (Node.js)   │  HTTP   │  (Navitia)   │
+│  + UI React │ ─────►  │  + React UI  │         │              │
+└─────────────┘         └──────────────┘         └──────────────┘
 ```
 
-## Integrate with your tools
+1. **ChatGPT** appelle votre serveur MCP via le protocole [Model Context Protocol](https://modelcontextprotocol.io/)
+2. **Le serveur MCP** récupère les données de l'API SNCF
+3. **L'interface React** s'affiche automatiquement dans ChatGPT avec les résultats
 
-- [ ] [Set up project integrations](https://gitlab.com/insideapp/internal/gpt-apps/sncf-test/sncf-mcp-server/-/settings/integrations)
+### Protocole MCP
 
-## Collaborate with your team
+MCP (Model Context Protocol) est un standard ouvert créé par Anthropic qui permet aux LLMs d'accéder à des données et outils externes de manière sécurisée. C'est utilisé par :
+- ChatGPT (via Apps SDK)
+- Claude Desktop
+- Cursor
+- Autres clients MCP
 
-- [ ] [Invite team members and collaborators](https://docs.gitlab.com/ee/user/project/members/)
-- [ ] [Create a new merge request](https://docs.gitlab.com/ee/user/project/merge_requests/creating_merge_requests.html)
-- [ ] [Automatically close issues from merge requests](https://docs.gitlab.com/ee/user/project/issues/managing_issues.html#closing-issues-automatically)
-- [ ] [Enable merge request approvals](https://docs.gitlab.com/ee/user/project/merge_requests/approvals/)
-- [ ] [Set auto-merge](https://docs.gitlab.com/user/project/merge_requests/auto_merge/)
+---
 
-## Test and Deploy
+## 🚀 Démarrage Rapide
 
-Use the built-in continuous integration in GitLab.
+### Prérequis
 
-- [ ] [Get started with GitLab CI/CD](https://docs.gitlab.com/ee/ci/quick_start/)
-- [ ] [Analyze your code for known vulnerabilities with Static Application Security Testing (SAST)](https://docs.gitlab.com/ee/user/application_security/sast/)
-- [ ] [Deploy to Kubernetes, Amazon EC2, or Amazon ECS using Auto Deploy](https://docs.gitlab.com/ee/topics/autodevops/requirements.html)
-- [ ] [Use pull-based deployments for improved Kubernetes management](https://docs.gitlab.com/ee/user/clusters/agent/)
-- [ ] [Set up protected environments](https://docs.gitlab.com/ee/ci/environments/protected_environments.html)
+- **Node.js 18+** ([télécharger](https://nodejs.org/))
+- **npm 8+** (inclus avec Node.js)
+- Un compte **ChatGPT** avec accès aux Apps (beta)
 
-***
+### Installation
 
-# Editing this README
+```bash
+# 1. Cloner ou télécharger ce projet
+git clone <votre-repo>
+cd sncf-mcp-server
 
-When you're ready to make this README your own, just edit this file and use the handy template below (or feel free to structure it however you want - this is just a starting point!). Thanks to [makeareadme.com](https://www.makeareadme.com/) for this template.
+# 2. Installer les dépendances
+npm install
 
-## Suggestions for a good README
+# 3. Installer les dépendances du composant UI
+cd web
+npm install
+cd ..
 
-Every project is different, so consider which of these sections apply to yours. The sections used in the template are suggestions for most open source projects. Also keep in mind that while a README can be too long and detailed, too long is better than too short. If you think your README is too long, consider utilizing another form of documentation rather than cutting out information.
+# 4. Builder le projet complet
+npm run build
+```
 
-## Name
-Choose a self-explaining name for your project.
+---
 
-## Description
-Let people know what your project can do specifically. Provide context and add a link to any reference visitors might be unfamiliar with. A list of Features or a Background subsection can also be added here. If there are alternatives to your project, this is a good place to list differentiating factors.
+## 📱 Déploiement pour ChatGPT
 
-## Badges
-On some READMEs, you may see small images that convey metadata, such as whether or not all the tests are passing for the project. You can use Shields to add some to your README. Many services also have instructions for adding a badge.
+### Option 1 : Test Local avec ngrok (Recommandé pour débuter)
 
-## Visuals
-Depending on what you are making, it can be a good idea to include screenshots or even a video (you'll frequently see GIFs rather than actual videos). Tools like ttygif can help, but check out Asciinema for a more sophisticated method.
+#### 1. Démarrer le serveur HTTP
 
-## Installation
-Within a particular ecosystem, there may be a common way of installing things, such as using Yarn, NuGet, or Homebrew. However, consider the possibility that whoever is reading your README is a novice and would like more guidance. Listing specific steps helps remove ambiguity and gets people to using your project as quickly as possible. If it only runs in a specific context like a particular programming language version or operating system or has dependencies that have to be installed manually, also add a Requirements subsection.
+```bash
+npm run start:http
+```
 
-## Usage
-Use examples liberally, and show the expected output if you can. It's helpful to have inline the smallest example of usage that you can demonstrate, while providing links to more sophisticated examples if they are too long to reasonably include in the README.
+Le serveur démarre sur `http://localhost:3000`
 
-## Support
-Tell people where they can go to for help. It can be any combination of an issue tracker, a chat room, an email address, etc.
+#### 2. Exposer avec ngrok
 
-## Roadmap
-If you have ideas for releases in the future, it is a good idea to list them in the README.
+Dans un **nouveau terminal** :
 
-## Contributing
-State if you are open to contributions and what your requirements are for accepting them.
+```bash
+# Installer ngrok si nécessaire
+brew install ngrok  # macOS
+# ou télécharger depuis https://ngrok.com/download
 
-For people who want to make changes to your project, it's helpful to have some documentation on how to get started. Perhaps there is a script that they should run or some environment variables that they need to set. Make these steps explicit. These instructions could also be useful to your future self.
+# Exposer le port 3000
+ngrok http 3000
+```
 
-You can also document commands to lint the code or run tests. These steps help to ensure high code quality and reduce the likelihood that the changes inadvertently break something. Having instructions for running tests is especially helpful if it requires external setup, such as starting a Selenium server for testing in a browser.
+Vous obtenez une URL publique comme :
+```
+https://abc123.ngrok-free.dev
+```
 
-## Authors and acknowledgment
-Show your appreciation to those who have contributed to the project.
+#### 3. Connecter à ChatGPT
 
-## License
-For open source projects, say how it is licensed.
+1. Ouvrez **ChatGPT** → **Settings** → **Apps** (ou **Connectors**)
+2. Cliquez sur **"Create custom app"** ou **"Add connector"**
+3. Entrez l'URL : `https://votre-url.ngrok-free.dev/mcp`
+4. Validez ✅
 
-## Project status
-If you have run out of energy or time for your project, put a note at the top of the README saying that development has slowed down or stopped completely. Someone may choose to fork your project or volunteer to step in as a maintainer or owner, allowing your project to keep going. You can also make an explicit request for maintainers.
+#### 4. Tester !
+
+Posez une question dans ChatGPT :
+> "Trouve-moi un train de Paris à Lyon pour demain matin"
+
+L'interface interactive devrait s'afficher ! 🎉
+
+---
+
+### Option 2 : Déploiement en Production
+
+Pour un déploiement permanent, hébergez votre serveur sur :
+
+#### **Fly.io** (Recommandé)
+
+```bash
+# Installer Fly CLI
+brew install flyctl  # macOS
+
+# Se connecter
+flyctl auth login
+
+# Créer et déployer
+flyctl launch
+flyctl deploy
+```
+
+Votre app sera accessible sur `https://votre-app.fly.dev`
+
+#### **Autres options**
+
+- **Railway** - Déploiement automatique depuis GitHub
+- **Render** - Service managé avec SSL gratuit
+- **Google Cloud Run** - Serverless avec scale automatique
+- **Vercel** - Pour les projets Next.js/Node.js
+
+Consultez le [guide de déploiement Apps SDK](https://developers.openai.com/apps-sdk/deploy) pour plus de détails.
+
+---
+
+## 🧪 Test en Local (sans ChatGPT)
+
+### Avec Cursor (l'IDE que vous utilisez)
+
+Le serveur MCP fonctionne déjà dans Cursor ! Posez-moi une question sur les trains et je vais utiliser le serveur.
+
+### Avec Claude Desktop
+
+1. Installer [Claude Desktop](https://claude.ai/download)
+
+2. Configurer dans `~/Library/Application Support/Claude/claude_desktop_config.json` :
+
+```json
+{
+  "mcpServers": {
+    "sncf-transport": {
+      "command": "node",
+      "args": [
+        "/chemin/absolu/vers/sncf-mcp-server/dist/index.js"
+      ]
+    }
+  }
+}
+```
+
+3. Redémarrer Claude Desktop
+4. L'icône MCP 🔌 apparaît en bas à gauche
+
+### Avec l'inspecteur MCP
+
+```bash
+npx @modelcontextprotocol/inspector node dist/index.js
+```
+
+Ouvre une interface web pour tester tous les tools.
+
+---
+
+## 📂 Structure du Projet
+
+```
+sncf-mcp-server/
+├── src/                          # Code du serveur MCP
+│   ├── index.ts                  # Serveur MCP (stdio pour Cursor/Claude)
+│   ├── http-server.ts            # Serveur HTTP (pour ChatGPT)
+│   ├── types.ts                  # Types TypeScript
+│   ├── client/
+│   │   └── sncfApiClient.ts     # Client API SNCF Navitia
+│   └── tools/
+│       ├── searchStations.ts    # 🔍 Recherche de gares
+│       ├── departures.ts        # 🚄 Horaires départs
+│       ├── arrivals.ts          # 🚄 Horaires arrivées
+│       └── journeys.ts          # 🗺️ Calcul d'itinéraires
+│
+├── web/                          # Interface React pour ChatGPT
+│   ├── src/
+│   │   ├── component.tsx        # Point d'entrée
+│   │   ├── JourneyViewer.tsx   # Composant principal
+│   │   ├── MapView.tsx          # Carte interactive Leaflet
+│   │   ├── hooks.ts             # Hooks window.openai
+│   │   ├── types.ts             # Types React
+│   │   └── utils.ts             # Formatage dates/durées
+│   └── dist/
+│       └── component.js         # Bundle (généré)
+│
+├── dist/                         # Code compilé (généré)
+├── package.json                  # Dépendances serveur
+├── tsconfig.json                 # Config TypeScript
+└── README.md                     # Ce fichier
+```
+
+---
+
+## 🛠️ Commandes Disponibles
+
+```bash
+# Développement
+npm run dev              # Mode dev avec hot-reload (stdio)
+npm run dev:http         # Mode dev serveur HTTP
+
+# Production
+npm run build            # Compile serveur + UI
+npm run build:ui         # Compile uniquement l'UI
+npm run start            # Lance serveur stdio
+npm run start:http       # Lance serveur HTTP (port 3000)
+```
+
+---
+
+## 🔧 Configuration Avancée
+
+### Variables d'environnement
+
+Créez un fichier `.env` :
+
+```bash
+PORT=3000                          # Port du serveur HTTP
+SERVER_URL=https://votre-app.com  # URL publique (optionnel)
+```
+
+### Personnaliser l'API SNCF
+
+L'API SNCF (Navitia) est publique mais vous pouvez obtenir une clé pour plus de requêtes :
+
+1. Créez un compte sur [Navitia.io](https://www.navitia.io/)
+2. Obtenez votre token API
+3. Modifiez `src/client/sncfApiClient.ts` :
+
+```typescript
+const SNCF_API_TOKEN = 'votre-token-ici';
+```
+
+### Ajouter d'autres réseaux de transport
+
+L'API Navitia supporte tous les transports français :
+- `coverage/fr-idf` - Île-de-France (métro, RER, bus)
+- `coverage/fr-sw` - Sud-Ouest
+- Etc.
+
+Ajoutez de nouveaux tools dans `src/tools/` !
+
+---
+
+## 🎨 Personnaliser l'Interface
+
+### Modifier l'UI React
+
+Les fichiers principaux :
+
+- **`web/src/JourneyViewer.tsx`** - Layout principal
+- **`web/src/MapView.tsx`** - Composant carte
+- **`web/src/utils.ts`** - Formatage des données
+
+Après modifications :
+
+```bash
+npm run build:ui  # Recompile l'UI
+# Relancez le serveur
+```
+
+### Thème et style
+
+L'interface utilise du CSS inline pour la compatibilité. Pour ajouter des styles globaux, modifiez le HTML dans `src/http-server.ts` :
+
+```typescript
+const html = `<!DOCTYPE html>
+<html>
+<head>
+  <style>
+    /* Vos styles globaux */
+  </style>
+</head>
+...`;
+```
+
+### Ajouter des fonctionnalités
+
+Exemples d'ajouts possibles :
+- 💰 Affichage des tarifs
+- ⭐ Favoris de gares
+- 🔔 Alertes de retard
+- 📅 Sauvegarder un trajet
+- 🎫 Lien vers la réservation
+
+---
+
+## 📚 Ressources & Documentation
+
+### Documentation officielle
+
+- [OpenAI Apps SDK](https://developers.openai.com/apps-sdk) - Guide complet Apps ChatGPT
+- [Apps SDK - MCP Server](https://developers.openai.com/apps-sdk/build/mcp-server) - Config serveur
+- [Apps SDK - Custom UX](https://developers.openai.com/apps-sdk/build/custom-ux) - Composants React
+- [Model Context Protocol](https://modelcontextprotocol.io/) - Spec MCP
+- [MCP SDK TypeScript](https://github.com/modelcontextprotocol/typescript-sdk) - SDK Node.js
+- [API SNCF Navitia](https://doc.navitia.io/) - Doc API transport
+
+### Communauté
+
+- [MCP Servers Repository](https://github.com/modelcontextprotocol/servers) - Exemples officiels
+- [OpenAI Apps Examples](https://github.com/openai/chatgpt-apps-examples) - Exemples d'apps
+
+---
+
+## 🐛 Debugging & Troubleshooting
+
+### Le serveur ne démarre pas
+
+```bash
+# Vérifier que Node.js est installé
+node --version  # Doit être 18+
+
+# Vérifier que les dépendances sont installées
+npm install
+cd web && npm install && cd ..
+
+# Rebuild complet
+npm run build
+```
+
+### L'UI ne s'affiche pas dans ChatGPT
+
+1. **Vérifier les logs ngrok** - Voir si ChatGPT fait des requêtes
+2. **Vérifier le serveur** - `http://localhost:3000/health` doit répondre
+3. **Rafraîchir le connecteur** dans ChatGPT (Settings → Apps → Refresh)
+4. **Vérifier le CSP** - Les domaines autorisés dans `src/http-server.ts`
+
+### Erreurs CORS
+
+Le serveur autorise toutes les origines en dev. En production, restreignez dans `src/http-server.ts` :
+
+```typescript
+res.setHeader('Access-Control-Allow-Origin', 'https://chatgpt.com');
+```
+
+### Logs
+
+Les logs du serveur s'affichent dans le terminal. Pour plus de détails :
+
+```typescript
+console.log('MCP Request:', jsonRpcRequest.method);
+```
+
+---
+
+## 🚀 Utiliser ce Projet comme Modèle
+
+Ce projet est un **template complet** pour créer vos propres apps ChatGPT avec interface React.
+
+### Pour créer votre propre app :
+
+1. **Dupliquez ce projet**
+2. **Remplacez l'API SNCF** par votre API
+3. **Modifiez les tools** dans `src/tools/`
+4. **Personnalisez l'UI React** dans `web/src/`
+5. **Déployez** !
+
+### Exemples d'apps possibles
+
+- 🎬 **Cinéma** - Recherche de films et horaires de séances avec carte des cinémas
+- 🍽️ **Restaurants** - Réservations avec menu et photos
+- 🏨 **Hôtels** - Recherche et disponibilités avec galerie
+- 📦 **Livraison** - Suivi de colis avec carte en temps réel
+- 📰 **News** - Articles avec lecteur intégré
+- 🎵 **Musique** - Lecteur audio dans ChatGPT
+- 📊 **Analytics** - Graphiques et dashboards
+
+Les possibilités sont infinies ! 🚀
+
+---
+
+## 📝 Licence
+
+MIT - Utilisez librement pour vos projets personnels ou commerciaux.
+
+---
+
+## 🙏 Crédits
+
+- **API Transport** - [SNCF Navitia](https://www.navitia.io/)
+- **Cartes** - [OpenStreetMap](https://www.openstreetmap.org/) via [Leaflet](https://leafletjs.com/)
+- **MCP Protocol** - [Anthropic](https://www.anthropic.com/)
+- **Apps SDK** - [OpenAI](https://openai.com/)
+
+---
+
+## 📞 Support
+
+Pour toute question :
+- 📖 Consultez la [documentation Apps SDK](https://developers.openai.com/apps-sdk)
+- 💬 Ouvrez une issue sur GitHub
+- 📧 Contactez l'équipe
+
+---
+
+**Bon voyage avec votre app ChatGPT ! 🚂✨**
