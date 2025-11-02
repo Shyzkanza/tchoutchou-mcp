@@ -1,7 +1,7 @@
 {
-  "name": "sncf-journeys-ui",
+  "name": "tchoutchou-journeys-ui",
   "version": "1.0.0",
-  "description": "React UI component for SNCF journeys in ChatGPT",
+  "description": "React UI component for French trains journeys in ChatGPT",
   "type": "module",
   "scripts": {
     "build": "esbuild src/component.tsx --bundle --format=esm --outfile=dist/component.js",

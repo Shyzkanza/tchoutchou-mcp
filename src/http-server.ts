@@ -36,7 +36,7 @@ try {
 function createMcpServer() {
   const server = new Server(
     {
-      name: 'sncf-transport',
+      name: 'tchoutchou-mcp',
       version: '1.0.0',
     },
     {
@@ -65,8 +65,8 @@ function createMcpServer() {
         {
           uri: 'ui://journeys/viewer.html',
           mimeType: 'text/html+skybridge',
-          name: 'SNCF Journeys Viewer',
-          description: 'Interface visuelle pour afficher les itinéraires SNCF',
+          name: 'TchouTchou Journeys Viewer',
+          description: 'Interface visuelle pour afficher les itinéraires de trains en France',
         },
       ],
     };
@@ -86,7 +86,52 @@ function createMcpServer() {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: system-ui, -apple-system, sans-serif; }
+    
+    /* Light mode (default) */
+    :root {
+      --bg-primary: #ffffff;
+      --bg-secondary: #ffffff;
+      --bg-tertiary: #f9fafb;
+      --text-primary: #1a1a1a;
+      --text-secondary: #6b7280;
+      --text-tertiary: #9ca3af;
+      --accent-primary: #2563eb;
+      --accent-bg: #eff6ff;
+      --border-color: #e5e7eb;
+      --border-light: #f3f4f6;
+      --success-bg: #d1fae5;
+      --success-text: #059669;
+      --warning-bg: #fef3c7;
+      --warning-border: #fbbf24;
+      --warning-text: #92400e;
+    }
+    
+    /* Dark mode */
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --bg-primary: #0f172a;
+        --bg-secondary: #1e293b;
+        --bg-tertiary: #334155;
+        --text-primary: #f1f5f9;
+        --text-secondary: #cbd5e1;
+        --text-tertiary: #94a3b8;
+        --accent-primary: #3b82f6;
+        --accent-bg: #1e3a8a;
+        --border-color: #334155;
+        --border-light: #475569;
+        --success-bg: #064e3b;
+        --success-text: #34d399;
+        --warning-bg: #451a03;
+        --warning-border: #92400e;
+        --warning-text: #fbbf24;
+      }
+    }
+    
+    body { 
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+    }
     #root { width: 100%; min-height: 100vh; }
   </style>
 </head>
@@ -325,7 +370,11 @@ const httpServer = http.createServer(async (req, res) => {
   // Health check endpoint (GET only)
   if ((req.url === '/health' || req.url === '/') && req.method === 'GET') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
-    res.end(JSON.stringify({ status: 'ok', service: 'sncf-mcp-server' }));
+    res.end(JSON.stringify({ 
+      status: 'ok', 
+      service: 'tchoutchou-mcp',
+      description: 'French trains search powered by Navitia API'
+    }));
     return;
   }
 
@@ -333,9 +382,9 @@ const httpServer = http.createServer(async (req, res) => {
   if (req.url === '/mcp' && req.method === 'GET') {
     res.writeHead(200, { 'Content-Type': 'application/json' });
     res.end(JSON.stringify({
-      name: 'sncf-transport',
+      name: 'tchoutchou-mcp',
       version: '1.0.0',
-      description: 'SNCF Transport MCP Server',
+      description: 'French trains search MCP server powered by Navitia API',
       protocol: 'mcp/1.0',
       capabilities: {
         tools: true,
@@ -377,11 +426,18 @@ const httpServer = http.createServer(async (req, res) => {
                 resources: {}
               },
               serverInfo: {
-                name: 'sncf-transport',
+                name: 'tchoutchou-mcp',
                 version: '1.0.0'
               }
             };
             break;
+          }
+          
+          case 'notifications/initialized': {
+            // Notification que le client est initialisé - pas de réponse nécessaire
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify({ jsonrpc: '2.0', id: jsonRpcRequest.id, result: {} }));
+            return;
           }
           
           case 'tools/list': {
@@ -492,8 +548,8 @@ const httpServer = http.createServer(async (req, res) => {
               resources: componentBundle ? [{
                 uri: 'ui://journeys/viewer.html',
                 mimeType: 'text/html+skybridge',
-                name: 'SNCF Journeys Viewer',
-                description: 'Interface visuelle pour afficher les itinéraires SNCF'
+                name: 'TchouTchou Journeys Viewer',
+                description: 'Interface visuelle pour afficher les itinéraires de trains en France'
               }] : []
             };
             break;
@@ -674,9 +730,10 @@ ${componentBundle}
 
 // Démarrer le serveur
 httpServer.listen(PORT, () => {
-  console.log(`🚂 SNCF MCP Server running on http://localhost:${PORT}`);
+  console.log(`🚂 TchouTchou MCP Server running on http://localhost:${PORT}`);
   console.log(`📍 MCP endpoint: http://localhost:${PORT}/mcp`);
   console.log(`💚 Health check: http://localhost:${PORT}/health`);
+  console.log(`🔗 Powered by Navitia API (open transport data)`);
   if (componentBundle) {
     console.log('✅ UI component loaded successfully');
   } else {

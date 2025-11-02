@@ -1,6 +1,6 @@
-# SNCF Journeys UI Component
+# TchouTchou Journeys UI Component
 
-Composant React pour afficher visuellement les itinéraires SNCF dans ChatGPT via l'Apps SDK.
+Composant React pour afficher visuellement les itinéraires de trains en France dans ChatGPT via l'Apps SDK.
 
 ## 📦 Installation
 
@@ -34,6 +34,6 @@ En mode watch pour rebuilder automatiquement lors des modifications.
 
 ## 🔗 Intégration avec le serveur MCP
 
-Le composant lit les données depuis `window.openai.toolOutput` qui contient la réponse JSON du tool `get_journeys` du serveur MCP Kotlin.
+Le composant lit les données depuis `window.openai.toolOutput` qui contient la réponse JSON du tool `get_journeys` du serveur MCP TchouTchou (Node.js/TypeScript).
 
 

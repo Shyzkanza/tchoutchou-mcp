@@ -32,7 +32,7 @@ try {
 // Créer le serveur MCP
 const server = new Server(
   {
-    name: 'sncf-transport',
+    name: 'tchoutchou-mcp',
     version: '1.0.0',
   },
   {
@@ -306,7 +306,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 async function main() {
   const transport = new StdioServerTransport();
   await server.connect(transport);
-  console.error('SNCF MCP Server running on stdio');
+  console.error('TchouTchou MCP Server running on stdio');
 }
 
 main().catch((error) => {

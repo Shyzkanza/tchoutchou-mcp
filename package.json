@@ -1,7 +1,7 @@
 {
-  "name": "sncf-mcp-server",
+  "name": "tchoutchou-mcp",
   "version": "1.0.0",
-  "description": "MCP Server for SNCF transport data with ChatGPT UI",
+  "description": "French trains search MCP server with ChatGPT UI - Powered by Navitia API",
   "type": "module",
   "main": "dist/index.js",
   "scripts": {

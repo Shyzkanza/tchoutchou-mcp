@@ -1,4 +1,4 @@
-# 🚂 SNCF Transport - App ChatGPT avec Interface Interactive
+# 🚂 TchouTchou MCP - French Trains Search for ChatGPT
 
 Une application ChatGPT qui permet de rechercher des trains en France avec une **interface visuelle interactive** incluant une carte, des horaires en temps réel, et la comparaison d'itinéraires.
 
@@ -6,6 +6,19 @@ Une application ChatGPT qui permet de rechercher des trains en France avec une *
 ![Node](https://img.shields.io/badge/node-18%2B-green)
 ![MCP](https://img.shields.io/badge/MCP-2024--11--05-orange)
 ![Apps SDK](https://img.shields.io/badge/ChatGPT-Apps%20SDK-purple)
+
+---
+
+## ⚠️ Disclaimer
+
+**Ce projet est indépendant et non-officiel.**
+
+- ❌ **Non affilié** à la SNCF, Keolis, ou Kisio Digital
+- ❌ **Non sponsorisé** par ces organisations
+- ✅ Utilise les **données publiques** de l'API [Navitia](https://www.navitia.io/)
+- ✅ Projet à but éducatif et pratique
+
+Les données de transport proviennent de l'API Navitia, qui agrège les données ouvertes des réseaux de transport français.
 
 ## 🎯 Qu'est-ce que c'est ?
 
@@ -80,8 +93,8 @@ MCP (Model Context Protocol) est un standard ouvert créé par Anthropic qui per
 
 ```bash
 # 1. Cloner ou télécharger ce projet
-git clone <votre-repo>
-cd sncf-mcp-server
+git clone https://github.com/TON_USERNAME/tchoutchou-mcp.git
+cd tchoutchou-mcp
 
 # 2. Installer les dépendances
 npm install
@@ -189,10 +202,10 @@ Le serveur MCP fonctionne déjà dans Cursor ! Posez-moi une question sur les tr
 ```json
 {
   "mcpServers": {
-    "sncf-transport": {
+    "tchoutchou-mcp": {
       "command": "node",
       "args": [
-        "/chemin/absolu/vers/sncf-mcp-server/dist/index.js"
+        "/chemin/absolu/vers/tchoutchou-mcp/dist/index.js"
       ]
     }
   }
@@ -215,7 +228,7 @@ Ouvre une interface web pour tester tous les tools.
 ## 📂 Structure du Projet
 
 ```
-sncf-mcp-server/
+tchoutchou-mcp/
 ├── src/                          # Code du serveur MCP
 │   ├── index.ts                  # Serveur MCP (stdio pour Cursor/Claude)
 │   ├── http-server.ts            # Serveur HTTP (pour ChatGPT)
@@ -431,12 +444,21 @@ MIT - Utilisez librement pour vos projets personnels ou commerciaux.
 
 ---
 
-## 🙏 Crédits
+## 🙏 Crédits & Attributions
 
-- **API Transport** - [SNCF Navitia](https://www.navitia.io/)
+- **Données Transport** - [Navitia API](https://www.navitia.io/) - Données ouvertes des transports français
 - **Cartes** - [OpenStreetMap](https://www.openstreetmap.org/) via [Leaflet](https://leafletjs.com/)
 - **MCP Protocol** - [Anthropic](https://www.anthropic.com/)
 - **Apps SDK** - [OpenAI](https://openai.com/)
+
+### Données & Licences
+
+Les données de transport proviennent de l'API Navitia qui agrège :
+- Données SNCF (TGV, Intercités, TER)
+- Données de transport régional
+- Horaires théoriques et temps réel
+
+Ces données sont mises à disposition par les opérateurs de transport dans le cadre de l'ouverture des données publiques.
 
 ---
 
