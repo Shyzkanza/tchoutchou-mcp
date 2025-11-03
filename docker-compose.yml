@@ -8,22 +8,17 @@ services:
     container_name: tchoutchou-mcp
     restart: unless-stopped
     
-    # Port exposé en interne seulement (Traefik gère l'exposition)
     expose:
       - "3000"
     
-    # Variables d'environnement
     environment:
       - NODE_ENV=production
       - PORT=3000
     
-    # Labels Traefik pour routage automatique et SSL
     labels:
       - "traefik.enable=true"
-      - "traefik.http.routers.tchoutchou-mcp-http.entrypoints=web"
-      - "traefik.http.routers.tchoutchou-mcp-http.rule=Host(`tchoutchou-mcp.rankorr.red`)"
-      - "traefik.http.routers.tchoutchou-mcp-http.middlewares=redirect-to-https@docker"
       
+      # Router HTTPS direct (sans redirection HTTP)
       - "traefik.http.routers.tchoutchou-mcp.entrypoints=websecure"
       - "traefik.http.routers.tchoutchou-mcp.rule=Host(`tchoutchou-mcp.rankorr.red`)"
       - "traefik.http.routers.tchoutchou-mcp.tls=true"
@@ -38,11 +33,9 @@ services:
       - "traefik.http.middlewares.tchoutchou-cors.headers.accesscontrolallowheaders=Content-Type,Authorization"
       - "traefik.http.middlewares.tchoutchou-cors.headers.accesscontrolmaxage=86400"
     
-    # Réseau Traefik (doit exister sur le VPS)
     networks:
       - traefik
     
-    # Healthcheck Docker natif
     healthcheck:
       test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
       interval: 30s
@@ -50,7 +43,6 @@ services:
       retries: 3
       start_period: 10s
     
-    # Logs limités pour ne pas saturer le disque
     logging:
       driver: "json-file"
       options:
