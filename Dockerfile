@@ -26,9 +26,9 @@ WORKDIR /app
 COPY package*.json ./
 COPY web/package*.json ./web/
 
-# Installer uniquement les dépendances de production
-RUN npm ci --only=production && npm cache clean --force
-RUN cd web && npm ci --only=production && npm cache clean --force
+# Installer uniquement les dépendances de production (sans exécuter les scripts de build)
+RUN npm ci --only=production --ignore-scripts && npm cache clean --force
+RUN cd web && npm ci --only=production --ignore-scripts && npm cache clean --force
 
 # Copier les fichiers buildés depuis le stage builder
 COPY --from=builder /app/dist ./dist
