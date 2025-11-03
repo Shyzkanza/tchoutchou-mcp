@@ -2,10 +2,12 @@
 
 Une application ChatGPT qui permet de rechercher des trains en France avec une **interface visuelle interactive** incluant une carte, des horaires en temps réel, et la comparaison d'itinéraires.
 
-![Version](https://img.shields.io/badge/version-1.0.0-blue)
+[![Deploy Status](https://github.com/Shyzkanza/tchoutchou-mcp/actions/workflows/deploy.yml/badge.svg)](https://github.com/Shyzkanza/tchoutchou-mcp/actions/workflows/deploy.yml)
+[![Website Status](https://img.shields.io/website?url=https%3A%2F%2Ftchoutchou-mcp.rankorr.red%2Fhealth&label=API)](https://tchoutchou-mcp.rankorr.red/health)
 ![Node](https://img.shields.io/badge/node-18%2B-green)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue)
 ![MCP](https://img.shields.io/badge/MCP-2024--11--05-orange)
-![Apps SDK](https://img.shields.io/badge/ChatGPT-Apps%20SDK-purple)
+![ChatGPT](https://img.shields.io/badge/ChatGPT-Apps%20SDK-purple)
 
 ---
 

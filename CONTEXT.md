@@ -107,9 +107,11 @@ tchoutchou-mcp/
 - [x] Stack déployée manuellement dans Portainer
 - [x] Conteneur démarre correctement (logs OK)
 - [x] Réseau Traefik connecté
-- [ ] Déploiement automatique via GitHub Actions (à tester)
+- [x] Workflow GitHub Actions avec 3 jobs (test → deploy → health-check)
+- [x] Badges dynamiques dans README (build status, API uptime)
+- [ ] Déploiement automatique via GitHub Actions (à tester - prochaine itération)
 - [ ] Vérifier SSL/HTTPS auto via Traefik
-- [ ] Test healthcheck: `https://tchoutchou-mcp.rankorr.red/health` (timeout actuellement)
+- [ ] Test healthcheck: `https://tchoutchou-mcp.rankorr.red/health`
 
 ### Phase 3: Intégration ChatGPT
 - [ ] Configurer ChatGPT avec URL MCP
@@ -124,7 +126,7 @@ tchoutchou-mcp/
 - [ ] Rate limiting / cache
 - [ ] Monitoring (logs, métriques)
 - [ ] Analytics d'usage
-- [ ] Tests automatisés
+- [ ] Tests E2E automatisés (au-delà du type checking actuel)
 
 ---
 
@@ -163,6 +165,18 @@ npm run dev:http
 ---
 
 ## 📝 Historique des Changements
+
+### 2025-11-03
+- ✅ Refactoring workflow GitHub Actions en 3 jobs séparés:
+  - Job `test`: Type checking TypeScript (main + web) + build test
+  - Job `deploy`: Déploiement via Portainer API (needs: test)
+  - Job `health-check`: Vérification API live (needs: deploy)
+- ✅ Ajout badges dynamiques README:
+  - Build status (actions/workflows/deploy.yml)
+  - API uptime status (website badge)
+  - TypeScript version
+- ✅ Documentation SECRETS.md référencée dans README + CONTEXT
+- ✅ Workflow déclenché uniquement sur push `main` (déjà existant, confirmé)
 
 ### 2025-11-02
 - ✅ Renommage SNCF → TchouTchou (légal safe)
