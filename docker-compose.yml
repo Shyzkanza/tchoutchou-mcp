@@ -2,9 +2,12 @@ version: '3.8'
 
 services:
   tchoutchou-mcp:
-    image: ghcr.io/rankorr/tchoutchou-mcp:latest
+    image: ghcr.io/shyzkanza/tchoutchou-mcp:latest
     container_name: tchoutchou-mcp
     restart: unless-stopped
+    
+    # Forcer le pull de l'image (important pour les registries privés)
+    pull_policy: always
     
     # Port exposé en interne seulement (Traefik gère l'exposition)
     expose:
