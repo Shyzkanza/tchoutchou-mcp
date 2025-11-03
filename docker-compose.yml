@@ -8,9 +8,9 @@ services:
     container_name: tchoutchou-mcp
     restart: unless-stopped
     
-    # Port exposé directement (mode sans Traefik pour test)
-    ports:
-      - "3000:3000"
+    # Port exposé en interne seulement (Traefik gère l'exposition)
+    expose:
+      - "3000"
     
     # Variables d'environnement
     environment:
@@ -68,5 +68,4 @@ services:
 
 networks:
   traefik:
-    driver: bridge
-    external: false
+    external: true
