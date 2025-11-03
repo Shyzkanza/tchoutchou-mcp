@@ -2,7 +2,9 @@ version: '3.8'
 
 services:
   tchoutchou-mcp:
-    image: ghcr.io/shyzkanza/tchoutchou-mcp:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: tchoutchou-mcp
     restart: unless-stopped
     
