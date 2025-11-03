@@ -22,7 +22,7 @@ services:
       - "traefik.enable=true"
       - "traefik.http.routers.tchoutchou-mcp-http.entrypoints=web"
       - "traefik.http.routers.tchoutchou-mcp-http.rule=Host(`tchoutchou-mcp.rankorr.red`)"
-      - "traefik.http.routers.tchoutchou-mcp-http.middlewares=traefik-redirect-to-https@docker"
+      - "traefik.http.routers.tchoutchou-mcp-http.middlewares=redirect-to-https@docker"
       
       - "traefik.http.routers.tchoutchou-mcp.entrypoints=websecure"
       - "traefik.http.routers.tchoutchou-mcp.rule=Host(`tchoutchou-mcp.rankorr.red`)"
