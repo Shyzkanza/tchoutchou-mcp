@@ -30,9 +30,10 @@
   - Endpoint MCP: `https://tchoutchou-mcp.rankorr.red/mcp`
   - Healthcheck: `https://tchoutchou-mcp.rankorr.red/health`
 - **Infrastructure**: 
-  - VPS Debian (rankorr.red)
-  - Docker + Traefik (SSL auto Let's Encrypt) + Portainer
-  - GitHub Actions pour déploiement automatique
+  - VPS Debian (51.75.30.220 / rankorr.red)
+  - Docker + Traefik (SSL auto Let's Encrypt, resolver: myresolver) + Portainer
+  - GitHub Actions → Portainer API pour déploiement automatique
+  - Réseau Docker : `playlist-server_web`
 - **Avantages approche subdomain**:
   - Zéro modification code nécessaire
   - Traefik gère tout automatiquement
@@ -92,20 +93,23 @@ tchoutchou-mcp/
 
 ### Phase 1: Configuration Déploiement (COMPLÉTÉ ✅)
 - [x] Créer `Dockerfile` optimisé multi-stage
-- [x] Créer `docker-compose.yml` avec labels Traefik
-- [x] Créer `.github/workflows/deploy.yml` pour CI/CD auto
+- [x] Créer `docker-compose.yml` avec labels Traefik (resolver: myresolver)
+- [x] Créer `.github/workflows/deploy.yml` avec Portainer API
 - [x] Créer `.dockerignore` pour optimiser build
-- [x] Créer `SECRETS.md` avec guide configuration
-- [x] Configurer secrets GitHub (VPS_HOST, VPS_USER, VPS_SSH_KEY)
-- [ ] Vérifier DNS: `tchoutchou-mcp.rankorr.red` → VPS
-- [ ] Vérifier réseau Docker `traefik` existe sur VPS
+- [x] Créer `SECRETS.md` avec guide Portainer
+- [x] Configurer secrets GitHub Portainer (URL, USERNAME, PASSWORD, STACK_ID, ENDPOINT_ID)
+- [x] Stack créée dans Portainer depuis Git repository
+- [x] Réseau Docker `playlist-server_web` créé
+- [x] DNS configuré: `tchoutchou-mcp.rankorr.red` → 51.75.30.220
 
-### Phase 2: Déploiement Initial
-- [ ] Push code sur GitHub
-- [ ] Tester build Docker localement
-- [ ] Déployer via GitHub Actions
-- [ ] Vérifier SSL/HTTPS auto
-- [ ] Test healthcheck: `https://tchoutchou-mcp.rankorr.red/health`
+### Phase 2: Déploiement Initial (EN COURS 🔄)
+- [x] Push code sur GitHub
+- [x] Stack déployée manuellement dans Portainer
+- [x] Conteneur démarre correctement (logs OK)
+- [x] Réseau Traefik connecté
+- [ ] Déploiement automatique via GitHub Actions (à tester)
+- [ ] Vérifier SSL/HTTPS auto via Traefik
+- [ ] Test healthcheck: `https://tchoutchou-mcp.rankorr.red/health` (timeout actuellement)
 
 ### Phase 3: Intégration ChatGPT
 - [ ] Configurer ChatGPT avec URL MCP
@@ -169,8 +173,12 @@ npm run dev:http
 - ✅ Compréhension flow complet: Tool → UI Resource → React Bundle
 - ✅ Configuration déploiement complète (Dockerfile, docker-compose, GitHub Actions)
 - ✅ Mise en place CONTEXT.md pour suivi dynamique du projet
-- ✅ Configuration secrets GitHub (VPS_HOST, VPS_USER, VPS_SSH_KEY)
+- ✅ Configuration secrets GitHub → Migration SSH vers Portainer API
 - ✅ Test build local réussi (npm run build)
+- ✅ Passage déploiement SSH → Portainer API (comme IRIS)
+- ✅ Stack créée dans Portainer (ID: 6, Endpoint: 3)
+- ✅ Correction config Traefik (resolver: myresolver, réseau: playlist-server_web)
+- ✅ Conteneur démarré avec succès sur VPS
 
 ### 2025-11-01 (Avant renommage)
 - Création projet SNCF MCP

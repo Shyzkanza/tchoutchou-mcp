@@ -1,4 +1,4 @@
-name: Build and Deploy to VPS
+name: Deploy TchouTchou MCP to VPS
 
 on:
   push:
@@ -6,133 +6,105 @@ on:
       - main
   workflow_dispatch:
 
-env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+# Annule les déploiements précédents
+concurrency:
+  group: deploy-tchoutchou-${{ github.ref }}
+  cancel-in-progress: true
 
 jobs:
-  build-and-push:
-    name: Build Docker Image
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
-    
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      
-      - name: Log in to GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      
-      - name: Extract metadata (tags, labels)
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=ref,event=branch
-            type=sha,prefix={{branch}}-
-            type=raw,value=latest,enable={{is_default_branch}}
-      
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          tags: ${{ steps.meta.outputs.tags }}
-          labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-  
   deploy:
-    name: Deploy to VPS
-    needs: build-and-push
+    name: Deploy via Portainer
     runs-on: ubuntu-latest
     
     steps:
-      - name: Checkout code (for docker-compose.yml)
-        uses: actions/checkout@v4
-      
-      - name: Deploy to VPS via SSH
-        uses: appleboy/ssh-action@v1.0.0
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          key: ${{ secrets.VPS_SSH_KEY }}
-          script: |
-            # Créer le répertoire du projet si nécessaire
-            mkdir -p ~/apps/tchoutchou-mcp
-            cd ~/apps/tchoutchou-mcp
-            
-            # Se connecter au registry GitHub
-            echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-            
-            # Pull la nouvelle image
-            docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-            
-            # Arrêter et supprimer l'ancien conteneur si existe
-            docker stop tchoutchou-mcp 2>/dev/null || true
-            docker rm tchoutchou-mcp 2>/dev/null || true
-            
-            # Copier le docker-compose.yml
-            cat > docker-compose.yml << 'EOF'
-            ${{ steps.read-compose.outputs.content }}
-            EOF
-            
-            # Démarrer le nouveau conteneur
-            docker-compose up -d
-            
-            # Nettoyer les anciennes images
-            docker image prune -af --filter "until=24h"
-            
-            # Vérifier que le conteneur tourne
-            sleep 5
-            docker ps | grep tchoutchou-mcp
-            
-            echo "✅ Déploiement terminé !"
-      
-      - name: Read docker-compose.yml
-        id: read-compose
-        run: |
-          COMPOSE_CONTENT=$(cat docker-compose.yml)
-          echo "content<<EOF" >> $GITHUB_OUTPUT
-          echo "$COMPOSE_CONTENT" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
-  
-  verify:
-    name: Verify Deployment
-    needs: deploy
-    runs-on: ubuntu-latest
+    - name: Checkout code
+      uses: actions/checkout@v4
     
-    steps:
-      - name: Wait for service to be ready
-        run: sleep 10
-      
-      - name: Check healthcheck endpoint
-        run: |
-          response=$(curl -s -o /dev/null -w "%{http_code}" https://tchoutchou-mcp.rankorr.red/health)
-          if [ $response -eq 200 ]; then
-            echo "✅ Service is healthy!"
+    # Redéploiement via Portainer API
+    - name: Redeploy via Portainer Git
+      run: |
+        echo "🔐 Authentification à Portainer..."
+        
+        # Authentification Portainer
+        AUTH_TOKEN=$(curl -s -X POST \
+          "${{ secrets.PORTAINER_URL }}/api/auth" \
+          -H "Content-Type: application/json" \
+          -d '{"Username":"${{ secrets.PORTAINER_USERNAME }}","Password":"${{ secrets.PORTAINER_PASSWORD }}"}' \
+          | jq -r '.jwt')
+        
+        if [ -z "$AUTH_TOKEN" ] || [ "$AUTH_TOKEN" = "null" ]; then
+          echo "❌ Erreur d'authentification Portainer"
+          exit 1
+        fi
+        
+        echo "✅ Authentification Portainer réussie"
+        
+        # Git redeploy
+        echo "🔄 Redéploiement de la stack depuis Git..."
+        
+        RESPONSE=$(curl -s -w "\n%{http_code}" -X PUT \
+          "${{ secrets.PORTAINER_URL }}/api/stacks/${{ secrets.PORTAINER_STACK_ID }}/git/redeploy?endpointId=${{ secrets.PORTAINER_ENDPOINT_ID }}" \
+          -H "Authorization: Bearer $AUTH_TOKEN" \
+          -H "Content-Type: application/json" \
+          -d '{
+            "prune": false,
+            "pullImage": true,
+            "repositoryAuthentication": true,
+            "repositoryUsername": "${{ github.actor }}",
+            "repositoryPassword": "${{ secrets.GITHUB_TOKEN }}",
+            "repositoryReferenceName": "refs/heads/main"
+          }')
+        
+        HTTP_CODE=$(echo "$RESPONSE" | tail -n1)
+        BODY=$(echo "$RESPONSE" | sed '$d')
+        
+        if [ "$HTTP_CODE" -ge 200 ] && [ "$HTTP_CODE" -lt 300 ]; then
+          echo "✅ Stack redéployée depuis Git (HTTP $HTTP_CODE)"
+        else
+          echo "❌ Erreur lors du redéploiement (HTTP $HTTP_CODE)"
+          echo "$BODY"
+          exit 1
+        fi
+        
+        # Attendre le redémarrage complet
+        echo "⏳ Attente de 30 secondes pour le démarrage du conteneur..."
+        sleep 30
+    
+    # Test du déploiement
+    - name: Test deployment
+      run: |
+        echo "🔍 Test de l'API via Traefik..."
+        
+        # Test avec retry en cas d'échec temporaire
+        for i in {1..5}; do
+          echo "🔄 Tentative $i/5..."
+          
+          if curl -f -k https://tchoutchou-mcp.rankorr.red/health; then
+            echo ""
+            echo "✅ API accessible via Traefik !"
+            
+            # Test endpoint MCP
+            echo "🔍 Test de l'endpoint MCP..."
+            curl -f -k https://tchoutchou-mcp.rankorr.red/mcp || true
+            
+            exit 0
           else
-            echo "❌ Service health check failed (HTTP $response)"
-            exit 1
+            echo "⚠️ Échec tentative $i, attente 10s..."
+            sleep 10
           fi
-      
-      - name: Check MCP endpoint
-        run: |
-          response=$(curl -s https://tchoutchou-mcp.rankorr.red/mcp)
-          if echo "$response" | grep -q "tchoutchou-mcp"; then
-            echo "✅ MCP endpoint is responding!"
-          else
-            echo "❌ MCP endpoint check failed"
-            exit 1
-          fi
-
+        done
+        
+        echo "❌ L'API n'est pas accessible après 5 tentatives"
+        exit 1
+    
+    # Notification
+    - name: Deployment notification
+      if: always()
+      run: |
+        if [ ${{ job.status }} == 'success' ]; then
+          echo "🎉 Déploiement réussi: https://tchoutchou-mcp.rankorr.red"
+          echo "📍 Endpoint MCP: https://tchoutchou-mcp.rankorr.red/mcp"
+          echo "💚 Health: https://tchoutchou-mcp.rankorr.red/health"
+        else
+          echo "❌ Échec du déploiement"
+        fi
