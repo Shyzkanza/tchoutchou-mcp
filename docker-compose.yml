@@ -19,27 +19,22 @@ services:
     
     # Labels Traefik pour routage automatique et SSL
     labels:
-      # Activer Traefik pour ce conteneur
       - "traefik.enable=true"
-      
-      # Router HTTP → HTTPS redirect (utilise le middleware Traefik existant)
-      - "traefik.http.routers.tchoutchou-mcp-http.rule=Host(`tchoutchou-mcp.rankorr.red`)"
       - "traefik.http.routers.tchoutchou-mcp-http.entrypoints=web"
+      - "traefik.http.routers.tchoutchou-mcp-http.rule=Host(`tchoutchou-mcp.rankorr.red`)"
       - "traefik.http.routers.tchoutchou-mcp-http.middlewares=traefik-redirect-to-https@docker"
       
-      # Router HTTPS principal
-      - "traefik.http.routers.tchoutchou-mcp.rule=Host(`tchoutchou-mcp.rankorr.red`)"
       - "traefik.http.routers.tchoutchou-mcp.entrypoints=websecure"
+      - "traefik.http.routers.tchoutchou-mcp.rule=Host(`tchoutchou-mcp.rankorr.red`)"
       - "traefik.http.routers.tchoutchou-mcp.tls=true"
       - "traefik.http.routers.tchoutchou-mcp.tls.certresolver=myresolver"
+      - "traefik.http.routers.tchoutchou-mcp.middlewares=tchoutchou-cors"
       
-      # Service (port du conteneur)
       - "traefik.http.services.tchoutchou-mcp.loadbalancer.server.port=3000"
       
-      # Middleware CORS pour ChatGPT
-      - "traefik.http.routers.tchoutchou-mcp.middlewares=tchoutchou-cors"
-      - "traefik.http.middlewares.tchoutchou-cors.headers.accesscontrolallowmethods=GET,POST,OPTIONS"
+      # CORS middleware
       - "traefik.http.middlewares.tchoutchou-cors.headers.accesscontrolalloworiginlist=https://chatgpt.com,https://chat.openai.com"
+      - "traefik.http.middlewares.tchoutchou-cors.headers.accesscontrolallowmethods=GET,POST,OPTIONS"
       - "traefik.http.middlewares.tchoutchou-cors.headers.accesscontrolallowheaders=Content-Type,Authorization"
       - "traefik.http.middlewares.tchoutchou-cors.headers.accesscontrolmaxage=86400"
     
