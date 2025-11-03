@@ -112,6 +112,8 @@ npm run build
 
 ## 📱 Déploiement pour ChatGPT
 
+> **🔒 Configuration des secrets CI/CD :** Pour déployer automatiquement sur un VPS avec GitHub Actions et Portainer, consultez [SECRETS.md](SECRETS.md) pour la configuration des secrets GitHub.
+
 ### Option 1 : Test Local avec ngrok (Recommandé pour débuter)
 
 #### 1. Démarrer le serveur HTTP

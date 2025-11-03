@@ -245,6 +245,7 @@ Pour ajouter d'autres viewers (departures, stations), deux options:
 - [OpenAI Apps SDK](https://developers.openai.com/apps-sdk)
 - [Traefik Docs](https://doc.traefik.io/traefik/)
 - Portainer: https://portainer.rankorr.red/
+- **[SECRETS.md](SECRETS.md)**: Configuration des secrets GitHub pour CI/CD avec Portainer
 
 ---
 
