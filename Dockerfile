@@ -7,14 +7,14 @@ WORKDIR /app
 COPY package*.json ./
 COPY web/package*.json ./web/
 
-# Installer toutes les dépendances (y compris dev pour le build)
-RUN npm ci
-RUN cd web && npm ci
+# Installer toutes les dépendances (sans exécuter prepare qui essaie de build)
+RUN npm ci --ignore-scripts
+RUN cd web && npm ci --ignore-scripts
 
 # Copier le code source
 COPY . .
 
-# Build du projet (serveur TypeScript + UI React)
+# Build du projet maintenant que le code est là (serveur TypeScript + UI React)
 RUN npm run build
 
 # Stage production - Image finale minimale
