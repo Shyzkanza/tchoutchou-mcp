@@ -6,9 +6,6 @@ services:
     container_name: tchoutchou-mcp
     restart: unless-stopped
     
-    # Forcer le pull de l'image (important pour les registries privés)
-    pull_policy: always
-    
     # Port exposé en interne seulement (Traefik gère l'exposition)
     expose:
       - "3000"
