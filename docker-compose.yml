@@ -22,23 +22,19 @@ services:
       # Activer Traefik pour ce conteneur
       - "traefik.enable=true"
       
-      # Router HTTP → HTTPS redirect
+      # Router HTTP → HTTPS redirect (utilise le middleware Traefik existant)
       - "traefik.http.routers.tchoutchou-mcp-http.rule=Host(`tchoutchou-mcp.rankorr.red`)"
       - "traefik.http.routers.tchoutchou-mcp-http.entrypoints=web"
-      - "traefik.http.routers.tchoutchou-mcp-http.middlewares=redirect-to-https"
+      - "traefik.http.routers.tchoutchou-mcp-http.middlewares=traefik-redirect-to-https@docker"
       
       # Router HTTPS principal
       - "traefik.http.routers.tchoutchou-mcp.rule=Host(`tchoutchou-mcp.rankorr.red`)"
       - "traefik.http.routers.tchoutchou-mcp.entrypoints=websecure"
       - "traefik.http.routers.tchoutchou-mcp.tls=true"
-      - "traefik.http.routers.tchoutchou-mcp.tls.certresolver=letsencrypt"
+      - "traefik.http.routers.tchoutchou-mcp.tls.certresolver=myresolver"
       
       # Service (port du conteneur)
       - "traefik.http.services.tchoutchou-mcp.loadbalancer.server.port=3000"
-      
-      # Middleware pour redirect HTTP → HTTPS
-      - "traefik.http.middlewares.redirect-to-https.redirectscheme.scheme=https"
-      - "traefik.http.middlewares.redirect-to-https.redirectscheme.permanent=true"
       
       # Middleware CORS pour ChatGPT
       - "traefik.http.routers.tchoutchou-mcp.middlewares=tchoutchou-cors"
