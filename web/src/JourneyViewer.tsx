@@ -207,7 +207,7 @@ export function JourneyViewer() {
           overflowX: "auto",
           paddingBottom: "8px"
         }}>
-          {journeys.map((journey, index) => (
+          {journeys.map((journey: Journey, index: number) => (
             <button
               key={index}
               onClick={() => setWidgetState({ ...widgetState, selectedJourneyIndex: index })}
@@ -765,7 +765,7 @@ function SectionCard({ section, index }: { section: Section; index: number }) {
                       padding: "6px 0"
                     }}>
                       <span style={{ fontWeight: "500" }}>
-                        {idx === 0 ? "🚉" : idx === section.stop_date_times.length - 1 ? "🏁" : "•"} {stop.stop_point?.name || "Arrêt"}
+                        {idx === 0 ? "🚉" : idx === (section.stop_date_times?.length ?? 0) - 1 ? "🏁" : "•"} {stop.stop_point?.name || "Arrêt"}
                       </span>
                       <div style={{ display: "flex", gap: "8px", fontSize: "12px" }}>
                         {stop.arrival_date_time && (
