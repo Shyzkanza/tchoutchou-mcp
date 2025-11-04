@@ -29,13 +29,17 @@ Cette application permet à **ChatGPT** d'accéder aux données de transport SNC
 ### ✨ Fonctionnalités
 
 - 🔍 **Recherche de gares** - Trouvez n'importe quelle gare en France par autocomplétion
-- 🚄 **Horaires en temps réel** - Prochains départs et arrivées en direct
+- 📍 **Recherche d'adresses** - Convertissez une adresse ou lieu en coordonnées GPS (Nominatim)
+- 🗺️ **Points d'intérêt proches** - Trouvez les arrêts de transport les plus proches d'une position GPS
+- 🚄 **Horaires en temps réel** - Prochains départs et arrivées en direct avec interface interactive
 - 🗺️ **Calcul d'itinéraires** - Trajet complet avec correspondances
-- 📊 **Interface visuelle** - Composant React intégré dans ChatGPT avec :
-  - Carte interactive avec zoom adaptatif
-  - Comparaison d'itinéraires avec onglets
-  - Détails des horaires et correspondances
-  - Mode plein écran pour la carte
+- 📊 **Interfaces visuelles** - Composants React intégrés dans ChatGPT avec :
+  - **JourneyViewer** : Carte interactive avec zoom adaptatif, comparaison d'itinéraires avec onglets
+  - **DeparturesViewer** : Tableau des départs avec horaires, retards, quais, et carte du trajet
+  - **ArrivalsViewer** : Tableau des arrivées avec provenance, horaires, retards, et carte du trajet
+  - **AddressMapViewer** : Affichage d'un point sur une carte interactive
+  - Mode plein écran pour toutes les cartes
+  - Détails des horaires, correspondances et arrêts intermédiaires
 
 ### 💬 Exemple d'utilisation
 
@@ -241,14 +245,20 @@ tchoutchou-mcp/
 │   │   └── sncfApiClient.ts     # Client API SNCF Navitia
 │   └── tools/
 │       ├── searchStations.ts    # 🔍 Recherche de gares
-│       ├── departures.ts        # 🚄 Horaires départs
-│       ├── arrivals.ts          # 🚄 Horaires arrivées
-│       └── journeys.ts          # 🗺️ Calcul d'itinéraires
+│       ├── searchAddress.ts     # 📍 Recherche d'adresses (Nominatim)
+│       ├── placesNearby.ts     # 🗺️ Points d'intérêt proches (GPS)
+│       ├── departures.ts        # 🚄 Horaires départs (+ UI)
+│       ├── arrivals.ts          # 🚄 Horaires arrivées (+ UI)
+│       ├── journeys.ts          # 🗺️ Calcul d'itinéraires (+ UI)
+│       └── addressMap.ts        # 🗺️ Affichage carte d'une adresse (+ UI)
 │
 ├── web/                          # Interface React pour ChatGPT
 │   ├── src/
-│   │   ├── component.tsx        # Point d'entrée
-│   │   ├── JourneyViewer.tsx   # Composant principal
+│   │   ├── component.tsx        # Point d'entrée avec routing
+│   │   ├── JourneyViewer.tsx   # Composant itinéraires
+│   │   ├── DeparturesViewer.tsx # Composant départs
+│   │   ├── ArrivalsViewer.tsx  # Composant arrivées
+│   │   ├── AddressMapViewer.tsx # Composant carte d'adresse
 │   │   ├── MapView.tsx          # Carte interactive Leaflet
 │   │   ├── hooks.ts             # Hooks window.openai
 │   │   ├── types.ts             # Types React
@@ -320,9 +330,13 @@ Ajoutez de nouveaux tools dans `src/tools/` !
 
 Les fichiers principaux :
 
-- **`web/src/JourneyViewer.tsx`** - Layout principal
-- **`web/src/MapView.tsx`** - Composant carte
-- **`web/src/utils.ts`** - Formatage des données
+- **`web/src/component.tsx`** - Point d'entrée avec routing conditionnel
+- **`web/src/JourneyViewer.tsx`** - Interface des itinéraires
+- **`web/src/DeparturesViewer.tsx`** - Interface des départs
+- **`web/src/ArrivalsViewer.tsx`** - Interface des arrivées
+- **`web/src/AddressMapViewer.tsx`** - Interface de carte d'adresse
+- **`web/src/MapView.tsx`** - Composant carte Leaflet réutilisable
+- **`web/src/utils.ts`** - Formatage des dates/durées
 
 Après modifications :
 

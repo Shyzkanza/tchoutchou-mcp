@@ -3,21 +3,97 @@ import type { SncfApiClient } from '../client/sncfApiClient.js';
 export class ArrivalsTool {
   constructor(private client: SncfApiClient) {}
 
-  async execute(stopAreaId: string, fromDateTime?: string, count: number = 10): Promise<string> {
+  async execute(
+    stopAreaId: string, 
+    fromDateTime?: string, 
+    duration?: number,
+    count: number = 20,
+    dataFreshness: string = 'realtime',
+    directionType?: string
+  ): Promise<string> {
     try {
-      const response = await this.client.getArrivals(stopAreaId, fromDateTime, undefined, count);
+      const response = await this.client.getArrivals(
+        stopAreaId, 
+        fromDateTime, 
+        duration, 
+        count, 
+        dataFreshness,
+        directionType
+      );
       
       if (response.error) {
         return `Erreur : ${response.error.message || 'Erreur inconnue'}`;
       }
       
-      if (response.departures.length === 0) {
+      const arrivals = response.arrivals || response.departures || [];
+      if (arrivals.length === 0) {
         return `Aucune arrivée trouvée pour la gare ${stopAreaId}`;
       }
       
-      return this.formatArrivals(response.departures, stopAreaId);
+      return this.formatArrivals(arrivals, stopAreaId);
     } catch (error) {
       return `Erreur lors de la récupération des arrivées : ${error instanceof Error ? error.message : 'Erreur inconnue'}`;
+    }
+  }
+
+  async executeWithData(
+    stopAreaId: string, 
+    fromDateTime?: string, 
+    duration?: number,
+    count: number = 20,
+    dataFreshness: string = 'realtime',
+    directionType?: string,
+    depth: number = 3
+  ): Promise<any> {
+    try {
+      // Essayer d'abord avec realtime, puis avec base_schedule si vide
+      let response = await this.client.getArrivals(
+        stopAreaId, 
+        fromDateTime, 
+        duration, 
+        count, 
+        dataFreshness,
+        directionType,
+        depth
+      );
+      
+      // L'API retourne "arrivals" pour l'endpoint /arrivals
+      const arrivals = response.arrivals || response.departures || [];
+      
+      // Si pas de résultats avec realtime, essayer avec base_schedule
+      if (arrivals.length === 0 && dataFreshness === 'realtime') {
+        console.log(`[ArrivalsTool] No realtime results, trying base_schedule...`);
+        response = await this.client.getArrivals(
+          stopAreaId, 
+          fromDateTime, 
+          duration || 86400, // Par défaut 24h si non spécifié
+          count, 
+          'base_schedule',
+          directionType,
+          depth
+        );
+      }
+      
+      // Utiliser arrivals si disponible, sinon departures (pour compatibilité)
+      const finalArrivals = response.arrivals || response.departures || [];
+      
+      // Extract station name from first arrival's stop_point or use ID as fallback
+      const stationName = finalArrivals[0]?.stop_point?.name || stopAreaId;
+      
+      return {
+        arrivals: finalArrivals,
+        stationName,
+        context: response.context || {},
+        error: response.error?.message
+      };
+    } catch (error) {
+      console.error(`[ArrivalsTool] Error:`, error);
+      return {
+        arrivals: [],
+        stationName: stopAreaId,
+        context: {},
+        error: error instanceof Error ? error.message : 'Erreur inconnue'
+      };
     }
   }
 

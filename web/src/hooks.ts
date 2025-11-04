@@ -87,4 +87,28 @@ export function useWidgetState<T extends WidgetState>(
   return [widgetState, setWidgetState] as const;
 }
 
+// Hook générique pour lire les données du message
+export function useMessageData<T>(): T | null {
+  const toolOutput = useToolOutput();
+  
+  if (!toolOutput) {
+    return null;
+  }
+
+  // Si c'est déjà un objet typé, le retourner directement
+  if (typeof toolOutput === 'object') {
+    return toolOutput as T;
+  }
+
+  // Si c'est une string, essayer de la parser comme JSON
+  if (typeof toolOutput === 'string') {
+    try {
+      return JSON.parse(toolOutput) as T;
+    } catch {
+      return null;
+    }
+  }
+
+  return null;
+}
 

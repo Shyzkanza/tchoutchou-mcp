@@ -16,6 +16,9 @@ import { SearchStationsTool } from './tools/searchStations.js';
 import { DeparturesTool } from './tools/departures.js';
 import { ArrivalsTool } from './tools/arrivals.js';
 import { JourneysTool } from './tools/journeys.js';
+import { PlacesNearbyTool } from './tools/placesNearby.js';
+import { searchAddress } from './tools/searchAddress.js';
+import { displayAddressMap } from './tools/addressMap.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
@@ -53,8 +56,9 @@ function createMcpServer() {
   const departuresTool = new DeparturesTool(sncfClient);
   const arrivalsTool = new ArrivalsTool(sncfClient);
   const journeysTool = new JourneysTool(sncfClient);
+  const placesNearbyTool = new PlacesNearbyTool(sncfClient);
 
-  // Enregistrer la ressource UI pour le composant journeys
+  // Enregistrer les ressources UI
   server.setRequestHandler(ListResourcesRequestSchema, async () => {
     if (!componentBundle) {
       return { resources: [] };
@@ -68,17 +72,23 @@ function createMcpServer() {
           name: 'TchouTchou Journeys Viewer',
           description: 'Interface visuelle pour afficher les itinéraires de trains en France',
         },
+        {
+          uri: 'ui://address/map.html',
+          mimeType: 'text/html+skybridge',
+          name: 'Address Map Viewer',
+          description: 'Interface visuelle pour afficher un point sur une carte interactive',
+        },
       ],
     };
   });
 
   server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
-    if (request.params.uri === 'ui://journeys/viewer.html') {
-      if (!componentBundle) {
-        throw new Error('UI component not available');
-      }
+    if (!componentBundle) {
+      throw new Error('UI component not available');
+    }
 
-      // Créer le HTML avec le bundle React intégré
+    if (request.params.uri === 'ui://journeys/viewer.html') {
+      // HTML pour le viewer de journeys
       const html = `<!DOCTYPE html>
 <html>
 <head>
@@ -86,52 +96,7 @@ function createMcpServer() {
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    
-    /* Light mode (default) */
-    :root {
-      --bg-primary: #ffffff;
-      --bg-secondary: #ffffff;
-      --bg-tertiary: #f9fafb;
-      --text-primary: #1a1a1a;
-      --text-secondary: #6b7280;
-      --text-tertiary: #9ca3af;
-      --accent-primary: #2563eb;
-      --accent-bg: #eff6ff;
-      --border-color: #e5e7eb;
-      --border-light: #f3f4f6;
-      --success-bg: #d1fae5;
-      --success-text: #059669;
-      --warning-bg: #fef3c7;
-      --warning-border: #fbbf24;
-      --warning-text: #92400e;
-    }
-    
-    /* Dark mode */
-    @media (prefers-color-scheme: dark) {
-      :root {
-        --bg-primary: #0f172a;
-        --bg-secondary: #1e293b;
-        --bg-tertiary: #334155;
-        --text-primary: #f1f5f9;
-        --text-secondary: #cbd5e1;
-        --text-tertiary: #94a3b8;
-        --accent-primary: #3b82f6;
-        --accent-bg: #1e3a8a;
-        --border-color: #334155;
-        --border-light: #475569;
-        --success-bg: #064e3b;
-        --success-text: #34d399;
-        --warning-bg: #451a03;
-        --warning-border: #92400e;
-        --warning-text: #fbbf24;
-      }
-    }
-    
-    body { 
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: var(--bg-primary);
-      color: var(--text-primary);
-    }
+    body { font-family: system-ui, -apple-system, sans-serif; }
     #root { width: 100%; min-height: 100vh; }
   </style>
 </head>
@@ -139,6 +104,48 @@ function createMcpServer() {
   <div id="root"></div>
   <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
   <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script>
+    window.__MCP_VIEW_TYPE__ = 'journey';
+  </script>
+  <script type="module">
+${componentBundle}
+  </script>
+</body>
+</html>`;
+
+      return {
+        contents: [
+          {
+            uri: request.params.uri,
+            mimeType: 'text/html+skybridge',
+            text: html,
+          },
+        ],
+      };
+    }
+
+    if (request.params.uri === 'ui://address/map.html') {
+      // HTML pour le viewer de map d'adresse
+      const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: system-ui, -apple-system, sans-serif; }
+    #root { width: 100%; height: 100vh; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script>
+    window.__MCP_VIEW_TYPE__ = 'addressMap';
+  </script>
   <script type="module">
 ${componentBundle}
   </script>
@@ -165,13 +172,13 @@ ${componentBundle}
       tools: [
         {
           name: 'search_stations',
-          description: 'Search for train stations in France using autocomplete. Returns station names, IDs, coordinates, and administrative information.',
+          description: 'Search for train stations in France by name. REQUIRED FIRST STEP to get station IDs for get_departures/get_arrivals. Use this when user asks for departures/arrivals at a station (e.g., "Montpellier Saint-Roch"). Returns station names and stop_area_id that you MUST use with get_departures or get_arrivals. Example: User asks "départs à Montpellier" → search_stations("Montpellier Saint-Roch") → get stop_area_id → get_departures(stop_area_id).',
           inputSchema: {
             type: 'object',
             properties: {
               query: {
                 type: 'string',
-                description: 'The search query (station name or city)',
+                description: 'Station name or city (e.g., "Gare de Lyon", "Montpellier"). NOT for street addresses.',
               },
             },
             required: ['query'],
@@ -179,61 +186,93 @@ ${componentBundle}
         },
         {
           name: 'get_departures',
-          description: 'Get next departures from a train station. Returns departure times (theoretical and real-time), line information, directions, and platform details.',
+          description: 'Get next departures from a train station with real-time information (times, delays, platforms, etc.). WORKFLOW: First call search_stations with the station name (e.g., "Montpellier Saint-Roch") to get the stop_area_id, then use that ID with this tool. Example: search_stations("Montpellier Saint-Roch") → get stop_area_id → get_departures(stop_area_id). Returns interactive UI with departure times, delays, platforms, and line information.',
           inputSchema: {
             type: 'object',
             properties: {
               stop_area_id: {
                 type: 'string',
-                description: 'The station ID (from search_stations)',
+                description: 'The station resource ID (e.g., "stop_area:SNCF:87391003" from search_stations or places_nearby). REQUIRED: use search_stations to find the ID first.',
               },
               from_datetime: {
                 type: 'string',
-                description: 'Optional: Start datetime in format YYYYMMDDTHHMMSS (e.g. 20240101T143000)',
+                description: 'Optional: Start datetime in format YYYYMMDDTHHMMSS (e.g. 20240101T143000). Default: now',
               },
-              count: {
-                type: 'number',
-                description: 'Optional: Number of departures to retrieve (default: 10)',
+              data_freshness: {
+                type: 'string',
+                description: 'Optional: "realtime" (default) for live data, "base_schedule" for theoretical schedules only',
+              },
+              direction_type: {
+                type: 'string',
+                description: 'Optional: Filter by direction - "all" (default), "forward" (clockwise/inbound), "backward" (anticlockwise/outbound)',
               },
             },
             required: ['stop_area_id'],
           },
+          // Métadonnées pour ChatGPT Apps SDK
+          ...(componentBundle ? {
+            _meta: {
+              'openai/outputTemplate': 'ui://departures/viewer.html',
+              'openai/toolInvocation/invoking': 'Récupération des prochains départs...',
+              'openai/toolInvocation/invoked': 'Départs affichés'
+            }
+          } : {})
         },
         {
           name: 'get_arrivals',
-          description: 'Get next arrivals at a train station. Returns arrival times (theoretical and real-time), line information, origins, and platform details.',
+          description: 'Get next arrivals at a train station with real-time information (times, delays, platforms, etc.). WORKFLOW: First call search_stations with the station name (e.g., "Montpellier Saint-Roch") to get the stop_area_id, then use that ID with this tool. Example: search_stations("Montpellier Saint-Roch") → get stop_area_id → get_arrivals(stop_area_id). Returns interactive UI with arrival times, delays, platforms, and line information.',
           inputSchema: {
             type: 'object',
             properties: {
               stop_area_id: {
                 type: 'string',
-                description: 'The station ID (from search_stations)',
+                description: 'The station resource ID (e.g., "stop_area:SNCF:87391003" from search_stations or places_nearby). REQUIRED: use search_stations to find the ID first.',
               },
               from_datetime: {
                 type: 'string',
-                description: 'Optional: Start datetime in format YYYYMMDDTHHMMSS (e.g. 20240101T143000)',
+                description: 'NOT USED for arrivals - arrivals always use current time. Only used for departures.',
+              },
+              duration: {
+                type: 'number',
+                description: 'Optional: Maximum duration in seconds to search (default: 86400 = 24h). Useful to limit the search window.',
               },
               count: {
                 type: 'number',
-                description: 'Optional: Number of arrivals to retrieve (default: 10)',
+                description: 'Optional: Number of arrivals to retrieve (default: 20)',
+              },
+              data_freshness: {
+                type: 'string',
+                description: 'Optional: "realtime" (default) for live data, "base_schedule" for theoretical schedules only',
+              },
+              direction_type: {
+                type: 'string',
+                description: 'Optional: Filter by direction - "all" (default), "forward" (clockwise/inbound), "backward" (anticlockwise/outbound)',
               },
             },
             required: ['stop_area_id'],
           },
+          // Métadonnées pour ChatGPT Apps SDK
+          ...(componentBundle ? {
+            _meta: {
+              'openai/outputTemplate': 'ui://arrivals/viewer.html',
+              'openai/toolInvocation/invoking': 'Récupération des prochaines arrivées...',
+              'openai/toolInvocation/invoked': 'Arrivées affichées'
+            }
+          } : {})
         },
         {
           name: 'get_journeys',
-          description: 'Calculate train journeys between two locations. Returns complete itineraries with connections, times, platforms, and walking sections. Supports real-time data. Displays an interactive UI.',
+          description: 'Calculate train journeys between two locations. ONLY accepts resource IDs (stop_area, stop_point, POI). Use places_nearby to find the nearest stop from GPS coordinates. Returns complete itineraries with connections, times, platforms, and walking sections. Supports real-time data. Displays an interactive UI.',
           inputSchema: {
             type: 'object',
             properties: {
               from: {
                 type: 'string',
-                description: 'Origin: station ID (from search_stations), address, or coordinates (lat;lon)',
+                description: 'Origin resource ID (e.g., "stop_area:SNCF:87391003" from search_stations or places_nearby). Do NOT use raw GPS coordinates - use places_nearby first to get a resource_id.',
               },
               to: {
                 type: 'string',
-                description: 'Destination: station ID (from search_stations), address, or coordinates (lat;lon)',
+                description: 'Destination resource ID (e.g., "stop_area:SNCF:87391003" from search_stations or places_nearby). Do NOT use raw GPS coordinates - use places_nearby first to get a resource_id.',
               },
               datetime: {
                 type: 'string',
@@ -245,7 +284,19 @@ ${componentBundle}
               },
               count: {
                 type: 'number',
-                description: 'Optional: Number of journeys to retrieve (default: 3)',
+                description: 'Optional: Number of journeys to retrieve (default: 5)',
+              },
+              max_nb_transfers: {
+                type: 'number',
+                description: 'Optional: Maximum number of transfers allowed (default: 10). Use lower values (0-2) for direct or simple journeys.',
+              },
+              wheelchair: {
+                type: 'boolean',
+                description: 'Optional: If true, only accessible routes for wheelchair users (default: false)',
+              },
+              timeframe_duration: {
+                type: 'number',
+                description: 'Optional: Search all journeys within the next X seconds (max 86400s = 24h). Useful to see all options in a time window.',
               },
             },
             required: ['from', 'to'],
@@ -256,6 +307,93 @@ ${componentBundle}
               'openai/outputTemplate': 'ui://journeys/viewer.html',
               'openai/toolInvocation/invoking': 'Recherche des meilleurs itinéraires...',
               'openai/toolInvocation/invoked': 'Itinéraires trouvés'
+            }
+          } : {})
+        },
+        {
+          name: 'places_nearby',
+          description: 'Find nearby public transport stops, stations, or points of interest around GPS coordinates. Returns the closest stop_areas/stop_points that can be used in get_journeys. ALWAYS use this tool first before search_stations for address-based journeys. Essential for optimal routing.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              longitude: {
+                type: 'number',
+                description: 'Longitude of the location (from search_address)',
+              },
+              latitude: {
+                type: 'number',
+                description: 'Latitude of the location (from search_address)',
+              },
+              distance: {
+                type: 'number',
+                description: 'Optional: Search radius in meters (default: 2000). Increase to 3000-5000m for rural/small towns if no results found. Some stations can be 2-5km from city centers.',
+              },
+              types: {
+                type: 'array',
+                items: { type: 'string' },
+                description: 'Optional: Types to search (default: ["stop_area", "stop_point"]). Options: stop_area, stop_point, poi',
+              },
+              count: {
+                type: 'number',
+                description: 'Optional: Maximum number of results (default: 10)',
+              },
+            },
+            required: ['longitude', 'latitude'],
+          },
+        },
+        {
+          name: 'search_address',
+          description: 'Search for an address or location and get GPS coordinates. Uses OpenStreetMap Nominatim API to convert addresses, place names, or points of interest into latitude/longitude coordinates. Use places_nearby with these coordinates to find nearby transit stops.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              query: {
+                type: 'string',
+                description: 'The address or location to search for (e.g., "10 Rue de Rivoli, Paris", "Tour Eiffel", "Gare de Lyon")',
+              },
+              limit: {
+                type: 'number',
+                description: 'Optional: Maximum number of results to return (default: 5)',
+              },
+              countryCode: {
+                type: 'string',
+                description: 'Optional: ISO 3166-1alpha2 country code to limit search (e.g., "fr" for France)',
+              },
+            },
+            required: ['query'],
+          },
+        },
+        {
+          name: 'display_address_map',
+          description: 'Display a location on an interactive map. Shows a point on a map with optional label and zoom level.',
+          inputSchema: {
+            type: 'object',
+            properties: {
+              latitude: {
+                type: 'number',
+                description: 'Latitude of the location (-90 to 90)',
+              },
+              longitude: {
+                type: 'number',
+                description: 'Longitude of the location (-180 to 180)',
+              },
+              label: {
+                type: 'string',
+                description: 'Optional: Label to display on the map marker',
+              },
+              zoom: {
+                type: 'number',
+                description: 'Optional: Zoom level (1-20, default: 15)',
+              },
+            },
+            required: ['latitude', 'longitude'],
+          },
+          // Métadonnées pour ChatGPT Apps SDK
+          ...(componentBundle ? {
+            _meta: {
+              'openai/outputTemplate': 'ui://address/map.html',
+              'openai/toolInvocation/invoking': 'Affichage de la carte...',
+              'openai/toolInvocation/invoked': 'Carte affichée'
             }
           } : {})
         },
@@ -290,10 +428,32 @@ ${componentBundle}
             throw new Error('stop_area_id parameter is required');
           }
           const fromDateTime = args.from_datetime as string | undefined;
-          const count = (args.count as number) || 10;
-          const result = await departuresTool.execute(stopAreaId, fromDateTime, count);
+          const duration = args.duration as number | undefined;
+          const count = (args.count as number) || 20;
+          const dataFreshness = (args.data_freshness as string) || 'realtime';
+          const directionType = args.direction_type as string | undefined;
+          
+          const departuresData = await departuresTool.executeWithData(
+            stopAreaId, 
+            fromDateTime, 
+            duration,
+            count, 
+            dataFreshness,
+            directionType,
+            3 // depth = 3 pour avoir les données complètes (vehicle_journey avec stop_date_times)
+          );
+
+          if (departuresData.error) {
+            return {
+              content: [{ type: 'text', text: `Erreur : ${departuresData.error}` }],
+            };
+          }
+
+          // Retourner les données JSON structurées pour le composant React
+          const jsonOutput = JSON.stringify(departuresData);
+
           return {
-            content: [{ type: 'text', text: result }],
+            content: [{ type: 'text', text: jsonOutput }],
           };
         }
 
@@ -302,11 +462,50 @@ ${componentBundle}
           if (!stopAreaId) {
             throw new Error('stop_area_id parameter is required');
           }
-          const fromDateTime = args.from_datetime as string | undefined;
-          const count = (args.count as number) || 10;
-          const result = await arrivalsTool.execute(stopAreaId, fromDateTime, count);
+          // Ne pas utiliser from_datetime pour les arrivées - laisser l'API utiliser l'heure actuelle
+          const fromDateTime = undefined; // Toujours undefined pour les arrivées
+          // Augmenter la durée par défaut pour avoir plus de résultats
+          const duration = args.duration as number | undefined || 86400; // 24h par défaut au lieu de rien
+          const count = (args.count as number) || 20;
+          const dataFreshness = (args.data_freshness as string) || 'realtime';
+          const directionType = args.direction_type as string | undefined;
+          
+          console.log(`[http-server] get_arrivals called with:`, {
+            stopAreaId,
+            fromDateTime,
+            duration,
+            count,
+            dataFreshness,
+            directionType
+          });
+          
+          const arrivalsData = await arrivalsTool.executeWithData(
+            stopAreaId, 
+            fromDateTime, 
+            duration,
+            count, 
+            dataFreshness,
+            directionType,
+            3 // depth = 3 pour avoir les données complètes (vehicle_journey avec stop_date_times)
+          );
+          
+          console.log(`[http-server] get_arrivals result:`, {
+            arrivalsCount: arrivalsData.arrivals?.length || 0,
+            stationName: arrivalsData.stationName,
+            error: arrivalsData.error
+          });
+
+          if (arrivalsData.error) {
+            return {
+              content: [{ type: 'text', text: `Erreur : ${arrivalsData.error}` }],
+            };
+          }
+
+          // Retourner les données JSON structurées pour le composant React
+          const jsonOutput = JSON.stringify(arrivalsData);
+
           return {
-            content: [{ type: 'text', text: result }],
+            content: [{ type: 'text', text: jsonOutput }],
           };
         }
 
@@ -318,9 +517,21 @@ ${componentBundle}
           }
           const datetime = args.datetime as string | undefined;
           const datetimeRepresents = (args.datetime_represents as string) || 'departure';
-          const count = (args.count as number) || 3;
+          const count = (args.count as number) || 5;
+          const maxNbTransfers = args.max_nb_transfers as number | undefined;
+          const wheelchair = args.wheelchair as boolean | undefined;
+          const timeframeDuration = args.timeframe_duration as number | undefined;
 
-          const journeyResult = await journeysTool.executeWithData(from, to, datetime, datetimeRepresents, count);
+          const journeyResult = await journeysTool.executeWithData(
+            from, 
+            to, 
+            datetime, 
+            datetimeRepresents, 
+            count,
+            maxNbTransfers,
+            wheelchair,
+            timeframeDuration
+          );
 
           if (journeyResult.error) {
             return {
@@ -335,6 +546,76 @@ ${componentBundle}
             to: journeyResult.to,
           });
 
+          return {
+            content: [{ type: 'text', text: jsonOutput }],
+          };
+        }
+
+        case 'places_nearby': {
+          const longitude = args.longitude as number;
+          const latitude = args.latitude as number;
+          if (longitude === undefined || latitude === undefined) {
+            throw new Error('longitude and latitude parameters are required');
+          }
+          const distance = (args.distance as number) || 2000;
+          const types = (args.types as string[]) || ['stop_area', 'stop_point'];
+          const count = (args.count as number) || 10;
+          
+          const result = await placesNearbyTool.execute(longitude, latitude, distance, types, count);
+          return {
+            content: [{ type: 'text', text: result }],
+          };
+        }
+
+        case 'search_address': {
+          const query = args.query as string;
+          if (!query) {
+            throw new Error('query parameter is required');
+          }
+          const limit = (args.limit as number) || 5;
+          const countryCode = args.countryCode as string | undefined;
+          
+          const results = await searchAddress({ query, limit, countryCode });
+          
+          // Format the results for display
+          let output = `Found ${results.length} result(s):\n\n`;
+          results.forEach((result, index) => {
+            output += `${index + 1}. ${result.displayName}\n`;
+            output += `   📍 Coordinates: ${result.latitude}, ${result.longitude}\n`;
+            output += `   🎯 Importance: ${result.importance.toFixed(2)}\n`;
+            if (result.address) {
+              const addr = result.address;
+              const parts = [];
+              if (addr.road) parts.push(addr.road);
+              if (addr.city) parts.push(addr.city);
+              if (addr.postcode) parts.push(addr.postcode);
+              if (addr.country) parts.push(addr.country);
+              if (parts.length > 0) {
+                output += `   📫 Address: ${parts.join(', ')}\n`;
+              }
+            }
+            output += '\n';
+          });
+          
+          return {
+            content: [{ type: 'text', text: output }],
+          };
+        }
+
+        case 'display_address_map': {
+          const latitude = args.latitude as number;
+          const longitude = args.longitude as number;
+          if (latitude === undefined || longitude === undefined) {
+            throw new Error('latitude and longitude parameters are required');
+          }
+          const label = args.label as string | undefined;
+          const zoom = (args.zoom as number) || 15;
+          
+          const result = await displayAddressMap({ latitude, longitude, label, zoom });
+          
+          // Return JSON data for the map component
+          const jsonOutput = JSON.stringify(result);
+          
           return {
             content: [{ type: 'text', text: jsonOutput }],
           };
@@ -416,6 +697,7 @@ const httpServer = http.createServer(async (req, res) => {
         const departuresTool = new DeparturesTool(sncfClient);
         const arrivalsTool = new ArrivalsTool(sncfClient);
         const journeysTool = new JourneysTool(sncfClient);
+        const placesNearbyTool = new PlacesNearbyTool(sncfClient);
         
         switch (jsonRpcRequest.method) {
           case 'initialize': {
@@ -445,13 +727,13 @@ const httpServer = http.createServer(async (req, res) => {
               tools: [
                 {
                   name: 'search_stations',
-                  description: 'Search for train stations in France using autocomplete. Returns station names, IDs, coordinates, and administrative information.',
+                  description: 'Search for train stations in France by name. REQUIRED FIRST STEP to get station IDs for get_departures/get_arrivals. Use this when user asks for departures/arrivals at a station (e.g., "Montpellier Saint-Roch"). Returns station names and stop_area_id that you MUST use with get_departures or get_arrivals. Example: User asks "départs à Montpellier" → search_stations("Montpellier Saint-Roch") → get stop_area_id → get_departures(stop_area_id).',
                   inputSchema: {
                     type: 'object',
                     properties: {
                       query: { 
                         type: 'string', 
-                        description: 'The search query (station name or city)' 
+                        description: 'Station name or city (e.g., "Gare de Lyon", "Montpellier"). NOT for street addresses.' 
                       }
                     },
                     required: ['query']
@@ -459,61 +741,99 @@ const httpServer = http.createServer(async (req, res) => {
                 },
                 {
                   name: 'get_departures',
-                  description: 'Get next departures from a train station. Returns departure times (theoretical and real-time), line information, directions, and platform details.',
+                  description: 'Get next departures from a train station with real-time information (times, delays, platforms, etc.). WORKFLOW: First call search_stations with the station name (e.g., "Montpellier Saint-Roch") to get the stop_area_id, then use that ID with this tool. Example: search_stations("Montpellier Saint-Roch") → get stop_area_id → get_departures(stop_area_id). Returns interactive UI with departure times, delays, platforms, and line information.',
                   inputSchema: {
                     type: 'object',
                     properties: {
                       stop_area_id: { 
                         type: 'string',
-                        description: 'The station ID (from search_stations)'
+                        description: 'The station resource ID (e.g., "stop_area:SNCF:87391003" from search_stations or places_nearby). REQUIRED: use search_stations to find the ID first.'
                       },
                       from_datetime: { 
                         type: 'string',
-                        description: 'Optional: Start datetime in format YYYYMMDDTHHMMSS (e.g. 20240101T143000)'
+                        description: 'Optional: Start datetime in format YYYYMMDDTHHMMSS (e.g. 20240101T143000). Default: now'
+                      },
+                      duration: {
+                        type: 'number',
+                        description: 'Optional: Maximum duration in seconds to search (default: 86400 = 24h). Useful to limit the search window.'
                       },
                       count: { 
                         type: 'number',
-                        description: 'Optional: Number of departures to retrieve (default: 10)'
+                        description: 'Optional: Number of departures to retrieve (default: 20)'
+                      },
+                      data_freshness: {
+                        type: 'string',
+                        description: 'Optional: "realtime" (default) for live data, "base_schedule" for theoretical schedules only'
+                      },
+                      direction_type: {
+                        type: 'string',
+                        description: 'Optional: Filter by direction - "all" (default), "forward" (clockwise/inbound), "backward" (anticlockwise/outbound)'
                       }
                     },
                     required: ['stop_area_id']
-                  }
+                  },
+                  ...(componentBundle ? {
+                    _meta: {
+                      'openai/outputTemplate': 'ui://departures/viewer.html',
+                      'openai/toolInvocation/invoking': 'Récupération des prochains départs...',
+                      'openai/toolInvocation/invoked': 'Départs affichés'
+                    }
+                  } : {})
                 },
                 {
                   name: 'get_arrivals',
-                  description: 'Get next arrivals at a train station. Returns arrival times (theoretical and real-time), line information, origins, and platform details.',
+                  description: 'Get next arrivals at a train station with real-time information (times, delays, platforms, etc.). WORKFLOW: First call search_stations with the station name (e.g., "Montpellier Saint-Roch") to get the stop_area_id, then use that ID with this tool. Example: search_stations("Montpellier Saint-Roch") → get stop_area_id → get_arrivals(stop_area_id). Returns interactive UI with arrival times, delays, platforms, and line information.',
                   inputSchema: {
                     type: 'object',
                     properties: {
                       stop_area_id: { 
                         type: 'string',
-                        description: 'The station ID (from search_stations)'
+                        description: 'The station resource ID (e.g., "stop_area:SNCF:87391003" from search_stations or places_nearby). REQUIRED: use search_stations to find the ID first.'
                       },
                       from_datetime: { 
                         type: 'string',
-                        description: 'Optional: Start datetime in format YYYYMMDDTHHMMSS (e.g. 20240101T143000)'
+                        description: 'Optional: Start datetime in format YYYYMMDDTHHMMSS (e.g. 20240101T143000). Default: now'
+                      },
+                      duration: {
+                        type: 'number',
+                        description: 'Optional: Maximum duration in seconds to search (default: 86400 = 24h). Useful to limit the search window.'
                       },
                       count: { 
                         type: 'number',
-                        description: 'Optional: Number of arrivals to retrieve (default: 10)'
+                        description: 'Optional: Number of arrivals to retrieve (default: 20)'
+                      },
+                      data_freshness: {
+                        type: 'string',
+                        description: 'Optional: "realtime" (default) for live data, "base_schedule" for theoretical schedules only'
+                      },
+                      direction_type: {
+                        type: 'string',
+                        description: 'Optional: Filter by direction - "all" (default), "forward" (clockwise/inbound), "backward" (anticlockwise/outbound)'
                       }
                     },
                     required: ['stop_area_id']
-                  }
+                  },
+                  ...(componentBundle ? {
+                    _meta: {
+                      'openai/outputTemplate': 'ui://arrivals/viewer.html',
+                      'openai/toolInvocation/invoking': 'Récupération des prochaines arrivées...',
+                      'openai/toolInvocation/invoked': 'Arrivées affichées'
+                    }
+                  } : {})
                 },
                 {
                   name: 'get_journeys',
-                  description: 'Calculate train journeys between two locations. Returns complete itineraries with connections, times, platforms, and walking sections. Supports real-time data. Displays an interactive UI.',
+                  description: 'Calculate train journeys between two locations. ONLY accepts resource IDs (stop_area, stop_point, POI). Use places_nearby to find the nearest stop from GPS coordinates. Returns complete itineraries with connections, times, platforms, and walking sections. Supports real-time data. Displays an interactive UI.',
                   inputSchema: {
                     type: 'object',
                     properties: {
                       from: { 
                         type: 'string',
-                        description: 'Origin: station ID (from search_stations), address, or coordinates (lat;lon)'
+                        description: 'Origin resource ID from search_stations or places_nearby. Do NOT use raw GPS coordinates.'
                       },
                       to: { 
                         type: 'string',
-                        description: 'Destination: station ID (from search_stations), address, or coordinates (lat;lon)'
+                        description: 'Destination resource ID from search_stations or places_nearby. Do NOT use raw GPS coordinates.'
                       },
                       datetime: { 
                         type: 'string',
@@ -525,7 +845,19 @@ const httpServer = http.createServer(async (req, res) => {
                       },
                       count: { 
                         type: 'number',
-                        description: 'Optional: Number of journeys to retrieve (default: 3)'
+                        description: 'Optional: Number of journeys to retrieve (default: 5)'
+                      },
+                      max_nb_transfers: {
+                        type: 'number',
+                        description: 'Optional: Maximum number of transfers allowed (default: 10). Use lower values (0-2) for direct or simple journeys.'
+                      },
+                      wheelchair: {
+                        type: 'boolean',
+                        description: 'Optional: If true, only accessible routes for wheelchair users (default: false)'
+                      },
+                      timeframe_duration: {
+                        type: 'number',
+                        description: 'Optional: Search all journeys within the next X seconds (max 86400s = 24h). Useful to see all options in a time window.'
                       }
                     },
                     required: ['from', 'to']
@@ -537,6 +869,92 @@ const httpServer = http.createServer(async (req, res) => {
                       'openai/toolInvocation/invoked': 'Itinéraires trouvés'
                     }
                   } : {})
+                },
+                {
+                  name: 'places_nearby',
+                  description: 'Find nearby public transport stops, stations, or points of interest around GPS coordinates. Returns the closest stop_areas/stop_points that can be used in get_journeys. ALWAYS use this tool first before search_stations for address-based journeys. Essential for optimal routing.',
+                  inputSchema: {
+                    type: 'object',
+                    properties: {
+                      longitude: {
+                        type: 'number',
+                        description: 'Longitude of the location (from search_address)'
+                      },
+                      latitude: {
+                        type: 'number',
+                        description: 'Latitude of the location (from search_address)'
+                      },
+                      distance: {
+                        type: 'number',
+                        description: 'Optional: Search radius in meters (default: 2000). Increase to 3000-5000m for rural/small towns if no results found. Some stations can be 2-5km from city centers.'
+                      },
+                      types: {
+                        type: 'array',
+                        items: { type: 'string' },
+                        description: 'Optional: Types to search (default: ["stop_area", "stop_point"]). Options: stop_area, stop_point, poi'
+                      },
+                      count: {
+                        type: 'number',
+                        description: 'Optional: Maximum number of results (default: 10)'
+                      }
+                    },
+                    required: ['longitude', 'latitude']
+                  }
+                },
+                {
+                  name: 'search_address',
+                  description: 'Search for an address or location and get GPS coordinates. Uses OpenStreetMap Nominatim API to convert addresses, place names, or points of interest into latitude/longitude coordinates. Use places_nearby with these coordinates to find nearby transit stops.',
+                  inputSchema: {
+                    type: 'object',
+                    properties: {
+                      query: {
+                        type: 'string',
+                        description: 'The address or location to search for (e.g., "10 Rue de Rivoli, Paris", "Tour Eiffel", "Gare de Lyon")'
+                      },
+                      limit: {
+                        type: 'number',
+                        description: 'Optional: Maximum number of results to return (default: 5)'
+                      },
+                      countryCode: {
+                        type: 'string',
+                        description: 'Optional: ISO 3166-1alpha2 country code to limit search (e.g., "fr" for France)'
+                      }
+                    },
+                    required: ['query']
+                  }
+                },
+                {
+                  name: 'display_address_map',
+                  description: 'Display a location on an interactive map. Shows a point on a map with optional label and zoom level.',
+                  inputSchema: {
+                    type: 'object',
+                    properties: {
+                      latitude: {
+                        type: 'number',
+                        description: 'Latitude of the location (-90 to 90)'
+                      },
+                      longitude: {
+                        type: 'number',
+                        description: 'Longitude of the location (-180 to 180)'
+                      },
+                      label: {
+                        type: 'string',
+                        description: 'Optional: Label to display on the map marker'
+                      },
+                      zoom: {
+                        type: 'number',
+                        description: 'Optional: Zoom level (1-20, default: 15)'
+                      }
+                    },
+                    required: ['latitude', 'longitude']
+                  },
+                  ...(componentBundle ? {
+                    _meta: {
+                      'openai/outputTemplate': 'ui://address/map.html',
+                      'openai/toolInvocation/invoking': 'Affichage de la carte...',
+                      'openai/toolInvocation/invoked': 'Carte affichée'
+                    }
+                  } : {})
                 }
               ]
             };
@@ -545,12 +963,32 @@ const httpServer = http.createServer(async (req, res) => {
           
           case 'resources/list': {
             result = {
-              resources: componentBundle ? [{
-                uri: 'ui://journeys/viewer.html',
-                mimeType: 'text/html+skybridge',
-                name: 'TchouTchou Journeys Viewer',
-                description: 'Interface visuelle pour afficher les itinéraires de trains en France'
-              }] : []
+              resources: componentBundle ? [
+                {
+                  uri: 'ui://journeys/viewer.html',
+                  mimeType: 'text/html+skybridge',
+                  name: 'TchouTchou Journeys Viewer',
+                  description: 'Interface visuelle pour afficher les itinéraires de trains en France'
+                },
+                {
+                  uri: 'ui://address/map.html',
+                  mimeType: 'text/html+skybridge',
+                  name: 'Address Map Viewer',
+                  description: 'Interface visuelle pour afficher un point sur une carte interactive'
+                },
+                {
+                  uri: 'ui://departures/viewer.html',
+                  mimeType: 'text/html+skybridge',
+                  name: 'TchouTchou Departures Viewer',
+                  description: 'Interface visuelle pour afficher le tableau des départs d\'une gare'
+                },
+                {
+                  uri: 'ui://arrivals/viewer.html',
+                  mimeType: 'text/html+skybridge',
+                  name: 'TchouTchou Arrivals Viewer',
+                  description: 'Interface visuelle pour afficher le tableau des arrivées d\'une gare'
+                }
+              ] : []
             };
             break;
           }
@@ -606,6 +1044,132 @@ ${componentBundle}
                   }
                 }]
               };
+            } else if (uri === 'ui://address/map.html' && componentBundle) {
+              const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: system-ui, -apple-system, sans-serif; }
+    #root { width: 100%; height: 100vh; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script>
+    window.__MCP_VIEW_TYPE__ = 'addressMap';
+  </script>
+  <script type="module">
+${componentBundle}
+  </script>
+</body>
+</html>`;
+              result = {
+                contents: [{
+                  uri: uri,
+                  mimeType: 'text/html+skybridge',
+                  text: html,
+                  _meta: {
+                    'openai/widgetPrefersBorder': true,
+                    'openai/widgetDomain': 'https://chatgpt.com',
+                    'openai/widgetCSP': {
+                      connect_domains: [
+                        'https://a.tile.openstreetmap.org',
+                        'https://b.tile.openstreetmap.org',
+                        'https://c.tile.openstreetmap.org'
+                      ],
+                      resource_domains: [
+                        'https://unpkg.com',
+                        'https://a.tile.openstreetmap.org',
+                        'https://b.tile.openstreetmap.org',
+                        'https://c.tile.openstreetmap.org',
+                        'https://unpkg.com/leaflet@1.9.4/dist/images'
+                      ]
+                    },
+                    'openai/widgetDescription': 'Affiche un point géographique sur une carte interactive OpenStreetMap avec Leaflet.'
+                  }
+                }]
+              };
+            } else if (uri === 'ui://departures/viewer.html' && componentBundle) {
+              const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: system-ui, -apple-system, sans-serif; }
+    #root { width: 100%; min-height: 100vh; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script type="module">
+${componentBundle}
+  </script>
+</body>
+</html>`;
+              result = {
+                contents: [{
+                  uri: uri,
+                  mimeType: 'text/html+skybridge',
+                  text: html,
+                  _meta: {
+                    'openai/widgetPrefersBorder': true,
+                    'openai/widgetDomain': 'https://chatgpt.com',
+                    'openai/widgetCSP': {
+                      connect_domains: ['https://api.sncf.com'],
+                      resource_domains: ['https://unpkg.com']
+                    },
+                    'openai/widgetDescription': 'Affiche le tableau interactif des prochains départs d\'une gare avec les horaires en temps réel.'
+                  }
+                }]
+              };
+            } else if (uri === 'ui://arrivals/viewer.html' && componentBundle) {
+              const html = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: system-ui, -apple-system, sans-serif; }
+    #root { width: 100%; min-height: 100vh; }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+  <script type="module">
+${componentBundle}
+  </script>
+</body>
+</html>`;
+              result = {
+                contents: [{
+                  uri: uri,
+                  mimeType: 'text/html+skybridge',
+                  text: html,
+                  _meta: {
+                    'openai/widgetPrefersBorder': true,
+                    'openai/widgetDomain': 'https://chatgpt.com',
+                    'openai/widgetCSP': {
+                      connect_domains: ['https://api.sncf.com'],
+                      resource_domains: ['https://unpkg.com']
+                    },
+                    'openai/widgetDescription': 'Affiche le tableau interactif des prochaines arrivées d\'une gare avec les horaires en temps réel.'
+                  }
+                }]
+              };
             } else {
               throw new Error(`Resource not found: ${uri}`);
             }
@@ -623,21 +1187,66 @@ ${componentBundle}
                 break;
               }
               case 'get_departures': {
-                const textResult = await departuresTool.execute(
+                const departuresData = await departuresTool.executeWithData(
                   args.stop_area_id,
                   args.from_datetime,
-                  args.count || 10
+                  args.duration,
+                  args.count || 20,
+                  args.data_freshness || 'realtime',
+                  args.direction_type,
+                  3 // depth = 3 pour avoir les données complètes (vehicle_journey avec stop_date_times)
                 );
-                result = { content: [{ type: 'text', text: textResult }] };
+                
+                if (departuresData.error) {
+                  result = { 
+                    content: [{ type: 'text', text: `Erreur : ${departuresData.error}` }],
+                    structuredContent: null
+                  };
+                } else {
+                  // Retourner les données JSON structurées pour le composant React
+                  // Utiliser content vide pour éviter l'affichage du JSON brut
+                  const jsonOutput = JSON.stringify(departuresData);
+                  
+                  result = {
+                    content: [{ type: 'text', text: jsonOutput }], // Nécessaire pour window.openai.toolOutput
+                  };
+                }
                 break;
               }
               case 'get_arrivals': {
-                const textResult = await arrivalsTool.execute(
+                // Ne pas utiliser from_datetime pour les arrivées - laisser l'API utiliser l'heure actuelle
+                // Augmenter la durée par défaut pour avoir plus de résultats
+                const duration = args.duration as number | undefined || 86400; // 24h par défaut
+                const arrivalsData = await arrivalsTool.executeWithData(
                   args.stop_area_id,
-                  args.from_datetime,
-                  args.count || 10
+                  undefined, // Toujours undefined pour les arrivées
+                  duration,
+                  args.count || 20,
+                  args.data_freshness || 'realtime',
+                  args.direction_type,
+                  3 // depth = 3 pour avoir les données complètes (vehicle_journey avec stop_date_times)
                 );
-                result = { content: [{ type: 'text', text: textResult }] };
+                
+                console.log(`[http-server] get_arrivals result:`, {
+                  arrivalsCount: arrivalsData.arrivals?.length || 0,
+                  stationName: arrivalsData.stationName,
+                  error: arrivalsData.error
+                });
+                
+                if (arrivalsData.error) {
+                  result = { 
+                    content: [{ type: 'text', text: `Erreur : ${arrivalsData.error}` }],
+                    structuredContent: null
+                  };
+                } else {
+                  // Retourner les données JSON structurées pour le composant React
+                  // Utiliser content vide pour éviter l'affichage du JSON brut
+                  const jsonOutput = JSON.stringify(arrivalsData);
+                  
+                  result = {
+                    content: [{ type: 'text', text: jsonOutput }], // Nécessaire pour window.openai.toolOutput
+                  };
+                }
                 break;
               }
               case 'get_journeys': {
@@ -646,7 +1255,10 @@ ${componentBundle}
                   args.to,
                   args.datetime,
                   args.datetime_represents || 'departure',
-                  args.count || 3
+                  args.count || 5,
+                  args.max_nb_transfers,
+                  args.wheelchair,
+                  args.timeframe_duration
                 );
                 
                 if (journeyResult.error) {
@@ -664,6 +1276,61 @@ ${componentBundle}
                     }
                   };
                 }
+                break;
+              }
+              case 'places_nearby': {
+                const textResult = await placesNearbyTool.execute(
+                  args.longitude,
+                  args.latitude,
+                  args.distance || 2000,
+                  args.types || ['stop_area', 'stop_point'],
+                  args.count || 10
+                );
+                result = { content: [{ type: 'text', text: textResult }] };
+                break;
+              }
+              case 'search_address': {
+                const results = await searchAddress({ 
+                  query: args.query, 
+                  limit: args.limit || 5, 
+                  countryCode: args.countryCode 
+                });
+                
+                // Format the results for display
+                let output = `Found ${results.length} result(s):\n\n`;
+                results.forEach((result, index) => {
+                  output += `${index + 1}. ${result.displayName}\n`;
+                  output += `   📍 Coordinates: ${result.latitude}, ${result.longitude}\n`;
+                  output += `   🎯 Importance: ${result.importance.toFixed(2)}\n`;
+                  if (result.address) {
+                    const addr = result.address;
+                    const parts = [];
+                    if (addr.road) parts.push(addr.road);
+                    if (addr.city) parts.push(addr.city);
+                    if (addr.postcode) parts.push(addr.postcode);
+                    if (addr.country) parts.push(addr.country);
+                    if (parts.length > 0) {
+                      output += `   📫 Address: ${parts.join(', ')}\n`;
+                    }
+                  }
+                  output += '\n';
+                });
+                
+                result = { content: [{ type: 'text', text: output }] };
+                break;
+              }
+              case 'display_address_map': {
+                const mapResult = await displayAddressMap({ 
+                  latitude: args.latitude, 
+                  longitude: args.longitude, 
+                  label: args.label, 
+                  zoom: args.zoom || 15 
+                });
+                
+                result = { 
+                  content: [],
+                  structuredContent: mapResult
+                };
                 break;
               }
               default:
@@ -688,7 +1355,7 @@ ${componentBundle}
         res.writeHead(200, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({
           jsonrpc: '2.0',
-          id: JSON.parse(body).id,
+          id: JSON.parse(body).id || null,
           error: {
             code: -32603,
             message: error instanceof Error ? error.message : 'Internal error'
@@ -729,10 +1396,11 @@ ${componentBundle}
 });
 
 // Démarrer le serveur
-httpServer.listen(PORT, () => {
-  console.log(`🚂 TchouTchou MCP Server running on http://localhost:${PORT}`);
-  console.log(`📍 MCP endpoint: http://localhost:${PORT}/mcp`);
-  console.log(`💚 Health check: http://localhost:${PORT}/health`);
+const HOST = process.env.HOST || '127.0.0.1';
+httpServer.listen(PORT as number, HOST, () => {
+  console.log(`🚂 TchouTchou MCP Server running on http://${HOST}:${PORT}`);
+  console.log(`📍 MCP endpoint: http://${HOST}:${PORT}/mcp`);
+  console.log(`💚 Health check: http://${HOST}:${PORT}/health`);
   console.log(`🔗 Powered by Navitia API (open transport data)`);
   if (componentBundle) {
     console.log('✅ UI component loaded successfully');

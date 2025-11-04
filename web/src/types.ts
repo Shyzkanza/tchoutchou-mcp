@@ -55,6 +55,7 @@ export interface Journey {
   tags?: string[];
   durations?: Durations;
   distances?: Distances;
+  co2_emission?: Co2Emission;
 }
 
 export interface Section {
@@ -73,6 +74,8 @@ export interface Section {
   transfer_type?: string;
   stop_date_times?: StopDateTime[];
   geojson?: GeoJson;
+  co2_emission?: Co2Emission;
+  id?: string;
 }
 
 export interface JourneyPlace {
@@ -89,12 +92,20 @@ export interface StopPointInfo {
   id?: string;
   name?: string;
   label?: string;
+  coord?: {
+    lat: string;
+    lon: string;
+  };
 }
 
 export interface StopArea {
   id?: string;
   name?: string;
   label?: string;
+  coord?: {
+    lat: string;
+    lon: string;
+  };
 }
 
 export interface AdministrativeRegion {
@@ -158,12 +169,21 @@ export interface DisplayInformations {
 export interface StopDateTime {
   arrival_date_time?: string;
   departure_date_time?: string;
+  base_arrival_date_time?: string;
+  base_departure_date_time?: string;
   stop_point?: StopPointInfo;
+  additional_informations?: string[];
 }
 
 export interface GeoJson {
   type?: string;
   coordinates?: number[][];
+  properties?: Array<{ length?: number }>;
+}
+
+export interface Co2Emission {
+  value?: number;
+  unit?: string;
 }
 
 declare global {

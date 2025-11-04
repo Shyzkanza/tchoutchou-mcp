@@ -1,6 +1,6 @@
 # 🧠 CONTEXT - TchouTchou MCP
 
-**Dernière mise à jour**: 2025-11-02  
+**Dernière mise à jour**: 2025-11-04  
 **Statut**: En développement - Prêt pour déploiement
 
 ---
@@ -43,10 +43,13 @@
 ### Composants React & UI
 - **Architecture UI**: Router interne dans un seul bundle
   - `component.tsx` : Point d'entrée avec routing conditionnel
-  - `JourneyViewer.tsx` : Affichage itinéraires (actuel)
-  - Extensible pour `DeparturesViewer`, `StationsViewer` (futur)
+  - `JourneyViewer.tsx` : Affichage itinéraires avec carte interactive
+  - `DeparturesViewer.tsx` : Tableau des départs avec horaires, retards, quais, carte du trajet
+  - `ArrivalsViewer.tsx` : Tableau des arrivées avec provenance, horaires, retards, carte du trajet
+  - `AddressMapViewer.tsx` : Affichage d'un point sur une carte interactive
+  - `MapView.tsx` : Composant carte Leaflet réutilisable
 - **Mécanisme d'affichage**:
-  1. Tool `get_journeys` a `_meta['openai/outputTemplate']` pointant vers `ui://journeys/viewer.html`
+  1. Tool (`get_journeys`, `get_departures`, `get_arrivals`, `display_address_map`) retourne `structuredContent` + `_meta['openai/outputTemplate']` pointant vers `ui://[type]/viewer.html`
   2. ChatGPT demande la ressource UI via `resources/read`
   3. Serveur retourne HTML + bundle React
   4. Bundle lit `window.openai.toolOutput` (structuredContent injecté par ChatGPT)
@@ -66,14 +69,20 @@ tchoutchou-mcp/
 │   │   └── sncfApiClient.ts  # Client API Navitia
 │   └── tools/
 │       ├── searchStations.ts # 🔍 Recherche gares
-│       ├── departures.ts     # 🚄 Départs
-│       ├── arrivals.ts       # 🚄 Arrivées
-│       └── journeys.ts       # 🗺️ Calcul itinéraires (+ UI)
+│       ├── searchAddress.ts  # 📍 Recherche adresses (Nominatim)
+│       ├── placesNearby.ts  # 🗺️ Points d'intérêt proches (GPS)
+│       ├── departures.ts     # 🚄 Départs (+ UI)
+│       ├── arrivals.ts       # 🚄 Arrivées (+ UI)
+│       ├── journeys.ts       # 🗺️ Calcul itinéraires (+ UI)
+│       └── addressMap.ts     # 🗺️ Affichage carte adresse (+ UI)
 ├── web/
 │   ├── src/
-│   │   ├── component.tsx     # Point d'entrée React
-│   │   ├── JourneyViewer.tsx # Composant principal itinéraires
-│   │   ├── MapView.tsx       # Carte Leaflet
+│   │   ├── component.tsx     # Point d'entrée React avec routing
+│   │   ├── JourneyViewer.tsx # Composant itinéraires
+│   │   ├── DeparturesViewer.tsx # Composant départs
+│   │   ├── ArrivalsViewer.tsx # Composant arrivées
+│   │   ├── AddressMapViewer.tsx # Composant carte adresse
+│   │   ├── MapView.tsx       # Carte Leaflet réutilisable
 │   │   ├── hooks.ts          # useToolOutput, useWidgetState
 │   │   ├── utils.ts          # Formatage dates/durées
 │   │   └── types.ts          # Types React
@@ -102,31 +111,36 @@ tchoutchou-mcp/
 - [x] Réseau Docker `playlist-server_web` créé
 - [x] DNS configuré: `tchoutchou-mcp.rankorr.red` → 51.75.30.220
 
-### Phase 2: Déploiement Initial (EN COURS 🔄)
+### Phase 2: Déploiement Initial (COMPLÉTÉ ✅)
 - [x] Push code sur GitHub
 - [x] Stack déployée manuellement dans Portainer
 - [x] Conteneur démarre correctement (logs OK)
 - [x] Réseau Traefik connecté
 - [x] Workflow GitHub Actions avec 3 jobs (test → deploy → health-check)
 - [x] Badges dynamiques dans README (build status, API uptime)
-- [ ] Déploiement automatique via GitHub Actions (à tester - prochaine itération)
-- [ ] Vérifier SSL/HTTPS auto via Traefik
-- [ ] Test healthcheck: `https://tchoutchou-mcp.rankorr.red/health`
+- [x] Déploiement automatique via GitHub Actions
+- [x] SSL/HTTPS auto via Traefik
+- [x] Healthcheck fonctionnel: `https://tchoutchou-mcp.rankorr.red/health`
 
-### Phase 3: Intégration ChatGPT
-- [ ] Configurer ChatGPT avec URL MCP
-- [ ] Tester recherche de gares
-- [ ] Tester calcul d'itinéraires + interface
-- [ ] Vérifier affichage carte
+### Phase 3: Intégration ChatGPT (EN COURS 🔄)
+- [x] Configurer ChatGPT avec URL MCP
+- [x] Tester recherche de gares
+- [x] Tester calcul d'itinéraires + interface
+- [x] Vérifier affichage carte
+- [x] Implémenter `DeparturesViewer` avec interface complète
+- [x] Implémenter `ArrivalsViewer` avec interface complète
+- [x] Implémenter `AddressMapViewer` pour affichage de points GPS
+- [x] Ajouter tools `search_address` et `places_nearby` pour workflow GPS
 - [ ] Tester sur mobile
+- [ ] Optimiser performances et UX
 
 ### Phase 4: Améliorations (BACKLOG)
-- [ ] Ajouter `DeparturesViewer` avec interface
-- [ ] Ajouter `StationsViewer` avec interface
 - [ ] Rate limiting / cache
 - [ ] Monitoring (logs, métriques)
 - [ ] Analytics d'usage
 - [ ] Tests E2E automatisés (au-delà du type checking actuel)
+- [ ] Amélioration accessibilité (WCAG)
+- [ ] Support multi-langues
 
 ---
 
@@ -158,13 +172,36 @@ npm run dev:http
 
 ### Tools MCP Disponibles
 1. **search_stations** : Recherche gares autocomplete
-2. **get_departures** : Prochains départs d'une gare
-3. **get_arrivals** : Prochaines arrivées d'une gare
-4. **get_journeys** : Calcul itinéraires (avec UI interactive)
+2. **search_address** : Conversion adresse/lieu → coordonnées GPS (Nominatim)
+3. **places_nearby** : Trouve les arrêts de transport proches d'une position GPS
+4. **get_departures** : Prochains départs d'une gare (avec UI interactive)
+5. **get_arrivals** : Prochaines arrivées d'une gare (avec UI interactive)
+6. **get_journeys** : Calcul itinéraires (avec UI interactive)
+7. **display_address_map** : Affichage d'un point sur une carte (avec UI interactive)
 
 ---
 
 ## 📝 Historique des Changements
+
+### 2025-11-04
+- ✅ Ajout tool `search_address` : Conversion adresse → GPS via Nominatim API
+- ✅ Ajout tool `places_nearby` : Trouve les arrêts de transport proches d'une position GPS
+- ✅ Ajout tool `display_address_map` : Affichage d'un point sur une carte interactive
+- ✅ Implémentation complète `DeparturesViewer` avec interface interactive :
+  - Tableau des départs avec horaires, retards, quais
+  - Carte du trajet avec GeoJSON
+  - Liste des arrêts intermédiaires
+  - Design moderne et responsive
+- ✅ Implémentation complète `ArrivalsViewer` avec interface interactive :
+  - Tableau des arrivées avec provenance, horaires, retards
+  - Carte du trajet avec GeoJSON
+  - Liste des arrêts intermédiaires
+  - Design moderne et responsive
+- ✅ Workflow optimisé : `search_address` → `places_nearby` → `get_journeys`
+- ✅ Amélioration paramètres tools : `depth`, `duration`, `direction_type`, `data_freshness`
+- ✅ Priorisation automatique : `places_nearby` avant `search_stations` pour addresses
+- ✅ Correction bugs affichage cartes dans modals (Leaflet `invalidateSize`)
+- ✅ Amélioration design UI : gradients, ombres, transitions fluides
 
 ### 2025-11-03
 - ✅ Refactoring workflow GitHub Actions en 3 jobs séparés:

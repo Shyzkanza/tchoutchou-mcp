@@ -9,10 +9,23 @@ export class JourneysTool {
     to: string,
     datetime?: string,
     datetimeRepresents: string = 'departure',
-    count: number = 3
+    count: number = 5,
+    maxNbTransfers?: number,
+    wheelchair?: boolean,
+    timeframeDuration?: number
   ): Promise<JourneyToolOutput & { error?: string }> {
     try {
-      const response = await this.client.getJourneys(from, to, datetime, datetimeRepresents, count);
+      const response = await this.client.getJourneys(
+        from, 
+        to, 
+        datetime, 
+        datetimeRepresents, 
+        count,
+        'realtime',
+        maxNbTransfers,
+        wheelchair,
+        timeframeDuration
+      );
       
       if (response.error) {
         return {
@@ -32,8 +45,19 @@ export class JourneysTool {
         };
       }
       
+      // Trier les trajets : privilégier ceux avec le moins de correspondances
+      // En cas d'égalité, privilégier les plus courts en durée
+      const sortedJourneys = [...response.journeys].sort((a, b) => {
+        // D'abord par nombre de correspondances (moins = mieux)
+        if (a.nb_transfers !== b.nb_transfers) {
+          return a.nb_transfers - b.nb_transfers;
+        }
+        // Puis par durée (plus court = mieux)
+        return a.duration - b.duration;
+      });
+      
       return {
-        journeys: response.journeys,
+        journeys: sortedJourneys,
         from,
         to
       };

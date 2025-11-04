@@ -40,8 +40,15 @@ export interface PlacesResponse {
 }
 
 export interface DeparturesResponse {
-  departures: Departure[];
+  departures?: Departure[];
+  arrivals?: Departure[]; // Pour l'endpoint /arrivals
   error?: ErrorResponse;
+  origins?: StopArea[];
+  terminus?: StopArea[];
+  context?: {
+    current_datetime: string;
+    timezone: string;
+  };
 }
 
 export interface Departure {

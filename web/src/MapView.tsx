@@ -24,30 +24,96 @@ interface MapViewProps {
 export function MapView({ journey, from, to }: MapViewProps) {
   const [isFullscreen, setIsFullscreen] = useState(false);
 
-  // Extraire les coordonnées de départ et d'arrivée
-  const getCoordinates = () => {
-    const coords: Array<[number, number]> = [];
-    
-    journey.sections.forEach((section) => {
-      if (section.type === "public_transport" && section.from?.stop_point) {
-        const fromCoord = section.from.stop_point.coord;
-        if (fromCoord) {
-          coords.push([parseFloat(fromCoord.lat), parseFloat(fromCoord.lon)]);
+  // Extraire les données pour la carte (GeoJSON, couleurs, etc.)
+  const getMapData = () => {
+    const paths: Array<{
+      coordinates: Array<[number, number]>;
+      color: string;
+      type: string;
+      label?: string;
+    }> = [];
+    const markers: Array<{
+      position: [number, number];
+      label: string;
+      isTransfer?: boolean;
+    }> = [];
+
+    journey.sections.forEach((section, idx) => {
+      // Extraire les coordonnées depuis le GeoJSON
+      if (section.geojson?.coordinates && section.geojson.coordinates.length > 0) {
+        const coords: Array<[number, number]> = section.geojson.coordinates.map(
+          (coord) => [coord[1], coord[0]] // GeoJSON est [lon, lat], Leaflet attend [lat, lon]
+        );
+
+        // Déterminer la couleur en fonction du type de section
+        let color = "#9ca3af"; // Gris par défaut
+        let label = "";
+
+        if (section.type === "public_transport") {
+          color = section.display_informations?.color 
+            ? `#${section.display_informations.color}` 
+            : "#2563eb";
+          label = section.display_informations?.code || section.display_informations?.name || "";
+        } else if (section.type === "transfer" || section.type === "crow_fly") {
+          color = "#f59e0b"; // Orange pour correspondances/marche
+        } else if (section.type === "walking" || section.mode === "walking") {
+          color = "#10b981"; // Vert pour marche
         }
-      }
-      
-      if (section.type === "public_transport" && section.to?.stop_point) {
-        const toCoord = section.to.stop_point.coord;
-        if (toCoord) {
-          coords.push([parseFloat(toCoord.lat), parseFloat(toCoord.lon)]);
+
+        paths.push({
+          coordinates: coords,
+          color,
+          type: section.type,
+          label
+        });
+
+        // Ajouter des markers pour les correspondances
+        if (section.type === "transfer" && coords.length > 0) {
+          markers.push({
+            position: coords[0],
+            label: "Correspondance",
+            isTransfer: true
+          });
         }
       }
     });
 
-    return coords.length >= 2 ? coords : null;
+    // Calculer les coordonnées de départ et d'arrivée pour les markers principaux
+    let startCoord: [number, number] | null = null;
+    let endCoord: [number, number] | null = null;
+
+    const firstPublicTransport = journey.sections.find(s => s.type === "public_transport");
+    const lastPublicTransport = [...journey.sections].reverse().find(s => s.type === "public_transport");
+
+    if (firstPublicTransport?.from?.stop_point?.coord) {
+      const c = firstPublicTransport.from.stop_point.coord;
+      startCoord = [parseFloat(c.lat), parseFloat(c.lon)];
+    } else if (firstPublicTransport?.from?.stop_area?.coord) {
+      const c = firstPublicTransport.from.stop_area.coord;
+      startCoord = [parseFloat(c.lat), parseFloat(c.lon)];
+    }
+
+    if (lastPublicTransport?.to?.stop_point?.coord) {
+      const c = lastPublicTransport.to.stop_point.coord;
+      endCoord = [parseFloat(c.lat), parseFloat(c.lon)];
+    } else if (lastPublicTransport?.to?.stop_area?.coord) {
+      const c = lastPublicTransport.to.stop_area.coord;
+      endCoord = [parseFloat(c.lat), parseFloat(c.lon)];
+    }
+
+    return { paths, markers, startCoord, endCoord };
   };
 
-  const coordinates = getCoordinates();
+  const mapData = getMapData();
+  const { paths, markers, startCoord, endCoord } = mapData;
+
+  // Calculer toutes les coordonnées pour centrer la carte
+  const allCoords: Array<[number, number]> = [];
+  paths.forEach(path => allCoords.push(...path.coordinates));
+  if (startCoord) allCoords.push(startCoord);
+  if (endCoord) allCoords.push(endCoord);
+
+  const coordinates = allCoords;
 
   if (!coordinates || coordinates.length < 2) {
     return null;
@@ -112,13 +178,30 @@ export function MapView({ journey, from, to }: MapViewProps) {
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
-        <Polyline positions={coordinates} color="#0066cc" weight={3} />
-        <Marker position={coordinates[0]}>
-          <Popup>{from || "Départ"}</Popup>
-        </Marker>
-        <Marker position={coordinates[coordinates.length - 1]}>
-          <Popup>{to || "Arrivée"}</Popup>
-        </Marker>
+        
+        {/* Tracer les trajets avec GeoJSON */}
+        {paths.map((path, idx) => (
+          <Polyline 
+            key={idx}
+            positions={path.coordinates} 
+            color={path.color} 
+            weight={path.type === "public_transport" ? 4 : 2}
+            opacity={path.type === "public_transport" ? 0.8 : 0.6}
+            dashArray={path.type === "transfer" || path.type === "crow_fly" ? "5, 10" : undefined}
+          />
+        ))}
+        
+        {/* Markers de départ et arrivée */}
+        {startCoord && (
+          <Marker position={startCoord}>
+            <Popup><strong>{from || "Départ"}</strong></Popup>
+          </Marker>
+        )}
+        {endCoord && (
+          <Marker position={endCoord}>
+            <Popup><strong>{to || "Arrivée"}</strong></Popup>
+          </Marker>
+        )}
       </MapContainer>
       <div
         style={{
@@ -189,6 +272,45 @@ export function MapView({ journey, from, to }: MapViewProps) {
         >
           ✕
         </button>
+        
+        {/* Légende */}
+        <div
+          style={{
+            position: "absolute",
+            top: "16px",
+            left: "16px",
+            zIndex: 1000,
+            background: "white",
+            border: "2px solid #e0e0e0",
+            borderRadius: "8px",
+            padding: "12px",
+            boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+            maxWidth: "250px"
+          }}
+        >
+          <div style={{ fontWeight: "700", marginBottom: "8px", fontSize: "14px" }}>Légende</div>
+          <div style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "12px" }}>
+            {paths.some(p => p.type === "public_transport") && (
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <div style={{ width: "20px", height: "3px", backgroundColor: "#2563eb" }}></div>
+                <span>Transport en commun</span>
+              </div>
+            )}
+            {paths.some(p => p.type === "transfer" || p.type === "crow_fly") && (
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <div style={{ width: "20px", height: "2px", borderTop: "2px dashed #f59e0b" }}></div>
+                <span>Correspondance</span>
+              </div>
+            )}
+            {paths.some(p => p.type === "walking" || p.type === "street_network") && (
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <div style={{ width: "20px", height: "2px", backgroundColor: "#10b981" }}></div>
+                <span>Marche</span>
+              </div>
+            )}
+          </div>
+        </div>
+        
         <MapContainer
           center={center}
           zoom={8}
@@ -198,21 +320,41 @@ export function MapView({ journey, from, to }: MapViewProps) {
             attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           />
-          <Polyline positions={coordinates} color="#0066cc" weight={4} />
-          <Marker position={coordinates[0]}>
-            <Popup>
-              <strong>{from || "Départ"}</strong>
-            </Popup>
-          </Marker>
-          <Marker position={coordinates[coordinates.length - 1]}>
-            <Popup>
-              <strong>{to || "Arrivée"}</strong>
-            </Popup>
-          </Marker>
-          {/* Markers intermédiaires */}
-          {coordinates.slice(1, -1).map((coord, idx) => (
-            <Marker key={idx} position={coord}>
-              <Popup>Étape {idx + 1}</Popup>
+          
+          {/* Tracer les trajets avec GeoJSON */}
+          {paths.map((path, idx) => (
+            <Polyline 
+              key={idx}
+              positions={path.coordinates} 
+              color={path.color} 
+              weight={path.type === "public_transport" ? 5 : 3}
+              opacity={0.8}
+              dashArray={path.type === "transfer" || path.type === "crow_fly" ? "5, 10" : undefined}
+            >
+              {path.label && (
+                <Popup>
+                  <strong>{path.label}</strong>
+                </Popup>
+              )}
+            </Polyline>
+          ))}
+          
+          {/* Markers de départ et arrivée */}
+          {startCoord && (
+            <Marker position={startCoord}>
+              <Popup><strong>🚉 {from || "Départ"}</strong></Popup>
+            </Marker>
+          )}
+          {endCoord && (
+            <Marker position={endCoord}>
+              <Popup><strong>🏁 {to || "Arrivée"}</strong></Popup>
+            </Marker>
+          )}
+          
+          {/* Markers pour les correspondances */}
+          {markers.map((marker, idx) => (
+            <Marker key={idx} position={marker.position}>
+              <Popup><strong>🔄 {marker.label}</strong></Popup>
             </Marker>
           ))}
         </MapContainer>
