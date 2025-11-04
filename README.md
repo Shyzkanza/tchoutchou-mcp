@@ -3,6 +3,8 @@
 Une application ChatGPT qui permet de rechercher des trains en France avec une **interface visuelle interactive** incluant une carte, des horaires en temps réel, et la comparaison d'itinéraires.
 
 [![Deploy Status](https://github.com/Shyzkanza/tchoutchou-mcp/actions/workflows/deploy.yml/badge.svg)](https://github.com/Shyzkanza/tchoutchou-mcp/actions/workflows/deploy.yml)
+[![npm version](https://img.shields.io/npm/v/@shyzus/tchoutchou-mcp)](https://www.npmjs.com/package/@shyzus/tchoutchou-mcp)
+[![npm downloads](https://img.shields.io/npm/dm/@shyzus/tchoutchou-mcp)](https://www.npmjs.com/package/@shyzus/tchoutchou-mcp)
 [![Website Status](https://img.shields.io/website?url=https%3A%2F%2Ftchoutchou-mcp.rankorr.red%2Fhealth&label=API)](https://tchoutchou-mcp.rankorr.red/health)
 ![Node](https://img.shields.io/badge/node-18%2B-green)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue)
@@ -89,29 +91,44 @@ MCP (Model Context Protocol) est un standard ouvert créé par Anthropic qui per
 
 ## 🚀 Démarrage Rapide
 
-### Prérequis
+### Utilisation avec Cursor / Claude Desktop / Warp
 
-- **Node.js 18+** ([télécharger](https://nodejs.org/))
-- **npm 8+** (inclus avec Node.js)
-- Un compte **ChatGPT** avec accès aux Apps (beta)
+**Le plus simple** - Ajoutez à votre configuration MCP :
 
-### Installation
+```json
+{
+  "mcpServers": {
+    "tchoutchou": {
+      "command": "npx",
+      "args": ["-y", "@shyzus/tchoutchou-mcp"]
+    }
+  }
+}
+```
+
+Le client se connecte automatiquement au serveur distant `https://tchoutchou-mcp.rankorr.red/mcp`.
+
+**Emplacements des fichiers de config :**
+- **Cursor** : `~/.cursor/mcp.json` (macOS/Linux) ou `%APPDATA%\Cursor\mcp.json` (Windows)
+- **Claude Desktop** : `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS)
+- **Warp** : Dans les settings de Warp AI
+
+### Pour développeurs - Installation locale
 
 ```bash
-# 1. Cloner ou télécharger ce projet
-git clone https://github.com/TON_USERNAME/tchoutchou-mcp.git
+# 1. Cloner le projet
+git clone https://github.com/rankorr/tchoutchou-mcp.git
 cd tchoutchou-mcp
 
 # 2. Installer les dépendances
 npm install
+cd web && npm install && cd ..
 
-# 3. Installer les dépendances du composant UI
-cd web
-npm install
-cd ..
-
-# 4. Builder le projet complet
+# 3. Builder
 npm run build
+
+# 4. Utiliser en local
+npx @modelcontextprotocol/inspector node dist/index.js
 ```
 
 ---

@@ -10,7 +10,25 @@ Ce fichier explique les secrets à configurer dans GitHub pour le déploiement a
 
 ---
 
-## 🔑 Secrets Requis (Portainer API)
+## 🔑 Secrets Requis
+
+### Pour Publication npm
+
+#### `NPM_TOKEN`
+**Description**: Token d'accès npm pour publier le package  
+**Comment l'obtenir**:
+1. Va sur https://www.npmjs.com/settings/TON_USERNAME/tokens
+2. Clique sur "Generate New Token" → "Classic Token"
+3. Sélectionne "Automation" (pour CI/CD)
+4. Copie le token généré
+
+**Format**: `npm_xxxxxxxxxxxxxxxxxxxxxxxxxx`
+
+⚠️ **Important**: Ce token permet de publier sur npm. Garde-le sécurisé !
+
+---
+
+### Pour Déploiement VPS (Portainer API)
 
 ### 1. `PORTAINER_URL`
 **Description**: URL de ton instance Portainer  

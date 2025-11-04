@@ -111,7 +111,41 @@ jobs:
         sleep 30
     
   
-  # Job 3: Health Check
+  # Job 3: Publish to npm
+  publish-npm:
+    name: Publish to npm
+    runs-on: ubuntu-latest
+    needs: test  # Attend les tests
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        registry-url: 'https://registry.npmjs.org'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci --ignore-scripts
+    
+    - name: Install UI dependencies
+      run: |
+        cd web
+        npm ci --ignore-scripts
+        cd ..
+    
+    - name: Build package
+      run: npm run build
+    
+    - name: Publish to npm
+      run: npm publish --access public
+      env:
+        NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+  
+  # Job 4: Health Check
   health-check:
     name: Health Check
     runs-on: ubuntu-latest

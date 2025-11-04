@@ -1,9 +1,23 @@
 {
-  "name": "tchoutchou-mcp",
+  "name": "@shyzus/tchoutchou-mcp",
   "version": "1.0.0",
-  "description": "French trains search MCP server with ChatGPT UI - Powered by Navitia API",
+  "description": "MCP client for French trains search - Powered by Navitia API",
   "type": "module",
   "main": "dist/index.js",
+  "bin": {
+    "tchoutchou-mcp": "dist/http-client.js"
+  },
+  "files": [
+    "dist/http-client.js",
+    "README.md"
+  ],
+  "keywords": ["mcp", "trains", "sncf", "navitia", "france", "transport", "chatgpt"],
+  "author": "Rankorr",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/rankorr/tchoutchou-mcp"
+  },
   "scripts": {
     "build": "tsc && npm run build:ui",
     "build:ui": "cd web && npm run build",
