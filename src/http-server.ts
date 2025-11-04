@@ -1396,7 +1396,7 @@ ${componentBundle}
 });
 
 // Démarrer le serveur
-const HOST = process.env.HOST || '127.0.0.1';
+const HOST = process.env.HOST || '0.0.0.0';
 httpServer.listen(PORT as number, HOST, () => {
   console.log(`🚂 TchouTchou MCP Server running on http://${HOST}:${PORT}`);
   console.log(`📍 MCP endpoint: http://${HOST}:${PORT}/mcp`);
