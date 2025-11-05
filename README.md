@@ -93,7 +93,7 @@ MCP (Model Context Protocol) est un standard ouvert créé par Anthropic qui per
 
 ### Utilisation avec Cursor / Claude Desktop / Warp
 
-**Le plus simple** - Ajoutez à votre configuration MCP :
+**Le plus simple** - Installez le client npm qui se connecte au serveur distant :
 
 ```json
 {
@@ -106,18 +106,53 @@ MCP (Model Context Protocol) est un standard ouvert créé par Anthropic qui per
 }
 ```
 
-Le client se connecte automatiquement au serveur distant `https://tchoutchou-mcp.rankorr.red/mcp`.
-
 **Emplacements des fichiers de config :**
 - **Cursor** : `~/.cursor/mcp.json` (macOS/Linux) ou `%APPDATA%\Cursor\mcp.json` (Windows)
 - **Claude Desktop** : `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS)
 - **Warp** : Dans les settings de Warp AI
 
+---
+
+### Utilisation avec ChatGPT
+
+Un serveur de production est déjà disponible et prêt à l'emploi !
+
+**URL du serveur** : `https://tchoutchou-mcp.rankorr.red/mcp`
+
+#### Configuration dans ChatGPT
+
+1. **Avoir un compte ChatGPT avec abonnement** (ChatGPT Plus, Team, ou Enterprise)
+2. **Ouvrir ChatGPT dans votre navigateur** → Allez dans les **Paramètres** (⚙️)
+3. **Aller dans "Applis et connecteurs"** (Apps & Connectors)
+4. **Activer le mode développeur** :
+   - Dans **"Paramètres avancés"**, activez le **mode développeur**
+   - Revenez en arrière
+5. **Créer une nouvelle application** :
+   - Le bouton **"Créer"** apparaît maintenant en haut à droite
+   - Cliquez dessus
+   - Remplissez le formulaire :
+     - **Nom** : "TchouTchou SNCF" (ou autre nom)
+     - **Image** : Ajoutez une icône/image (optionnel)
+     - **URL du serveur** : `https://tchoutchou-mcp.rankorr.red/mcp`
+     - **Authentification** : Sélectionnez **"Aucune"** (None)
+   - Cliquez sur **"Créer"**
+6. **L'application est maintenant disponible** dans ChatGPT et s'activera automatiquement quand vous demanderez à ChatGPT de l'utiliser
+
+#### Tester !
+
+Posez une question dans ChatGPT :
+> "Trouve-moi un train de Paris à Lyon pour demain matin"
+
+Ou pour tester directement :
+> "Utilise TchouTchou SNCF pour trouver les prochains départs de Montpellier Saint-Roch"
+
+L'interface interactive devrait s'afficher ! 🎉
+
 ### Pour développeurs - Installation locale
 
 ```bash
 # 1. Cloner le projet
-git clone https://github.com/rankorr/tchoutchou-mcp.git
+git clone https://github.com/Shyzkanza/tchoutchou-mcp.git
 cd tchoutchou-mcp
 
 # 2. Installer les dépendances
@@ -133,11 +168,13 @@ npx @modelcontextprotocol/inspector node dist/index.js
 
 ---
 
-## 📱 Déploiement pour ChatGPT
+## 📱 Déploiement et Développement
 
 > **🔒 Configuration des secrets CI/CD :** Pour déployer automatiquement sur un VPS avec GitHub Actions et Portainer, consultez [SECRETS.md](SECRETS.md) pour la configuration des secrets GitHub.
 
-### Option 1 : Test Local avec ngrok (Recommandé pour débuter)
+> **💡 Pour utiliser l'application dans ChatGPT**, consultez la section [🚀 Démarrage Rapide](#-démarrage-rapide) ci-dessus pour les instructions complètes.
+
+### Option 1 : Test Local avec ngrok (Pour développement)
 
 #### 1. Démarrer le serveur HTTP
 
@@ -165,50 +202,51 @@ Vous obtenez une URL publique comme :
 https://abc123.ngrok-free.dev
 ```
 
-#### 3. Connecter à ChatGPT
+**Important** : Notez l'URL complète avec `/mcp` à la fin : `https://abc123.ngrok-free.dev/mcp`
 
-1. Ouvrez **ChatGPT** → **Settings** → **Apps** (ou **Connectors**)
-2. Cliquez sur **"Create custom app"** ou **"Add connector"**
-3. Entrez l'URL : `https://votre-url.ngrok-free.dev/mcp`
-4. Validez ✅
+#### 3. Configurer l'application dans ChatGPT
 
-#### 4. Tester !
-
-Posez une question dans ChatGPT :
-> "Trouve-moi un train de Paris à Lyon pour demain matin"
-
-L'interface interactive devrait s'afficher ! 🎉
+Suivez les instructions de configuration dans la section [🚀 Démarrage Rapide](#-démarrage-rapide), en utilisant votre URL ngrok (`https://votre-url.ngrok-free.dev/mcp`) au lieu de l'URL de production.
 
 ---
 
-### Option 2 : Déploiement en Production
+### Option 2 : Déployer votre propre serveur (Pour développeurs)
 
-Pour un déploiement permanent, hébergez votre serveur sur :
+> **Note** : Si vous voulez simplement utiliser l'application, consultez la section [🚀 Démarrage Rapide](#-démarrage-rapide) qui utilise le serveur de production déjà disponible.
 
-#### **Fly.io** (Recommandé)
+Ce projet inclut un workflow GitHub Actions qui déploie automatiquement sur un VPS avec Docker et Portainer.
 
-```bash
-# Installer Fly CLI
-brew install flyctl  # macOS
+#### **Déploiement VPS avec GitHub Actions**
 
-# Se connecter
-flyctl auth login
+1. **Configurez les secrets GitHub** selon [SECRETS.md](SECRETS.md)
+2. **Push sur la branche `main`**
+3. GitHub Actions va automatiquement :
+   - ✅ Tester le code TypeScript
+   - ✅ Publier sur npm (`@shyzus/tchoutchou-mcp`)
+   - ✅ Déployer sur votre VPS via Portainer
+   - ✅ Vérifier le health check
 
-# Créer et déployer
-flyctl launch
-flyctl deploy
-```
+**Avantages** :
+- Déploiement automatique à chaque push
+- SSL gratuit avec Traefik + Let's Encrypt
+- Health monitoring intégré
+- Logs centralisés
 
-Votre app sera accessible sur `https://votre-app.fly.dev`
+#### **Autres plateformes cloud**
 
-#### **Autres options**
-
+Vous pouvez également déployer sur :
 - **Railway** - Déploiement automatique depuis GitHub
 - **Render** - Service managé avec SSL gratuit
+- **Fly.io** - Edge computing avec déploiement global
 - **Google Cloud Run** - Serverless avec scale automatique
-- **Vercel** - Pour les projets Next.js/Node.js
 
 Consultez le [guide de déploiement Apps SDK](https://developers.openai.com/apps-sdk/deploy) pour plus de détails.
+
+#### **Configurer votre serveur dans ChatGPT**
+
+Une fois déployé :
+1. Notez l'URL de votre serveur : `https://votre-domaine.com/mcp`
+2. Suivez les instructions dans [🚀 Démarrage Rapide](#-démarrage-rapide)
 
 ---
 

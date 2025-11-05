@@ -4,7 +4,7 @@ Ce fichier explique les secrets à configurer dans GitHub pour le déploiement a
 
 ## 📍 Où Configurer les Secrets
 
-1. Va sur ton repo GitHub : `https://github.com/TON_USERNAME/tchoutchou-mcp`
+1. Va sur ton repo GitHub : `https://github.com/YOUR_USERNAME/tchoutchou-mcp`
 2. Clique sur **Settings** → **Secrets and variables** → **Actions**
 3. Clique sur **New repository secret**
 
@@ -17,7 +17,7 @@ Ce fichier explique les secrets à configurer dans GitHub pour le déploiement a
 #### `NPM_TOKEN`
 **Description**: Token d'accès npm pour publier le package  
 **Comment l'obtenir**:
-1. Va sur https://www.npmjs.com/settings/TON_USERNAME/tokens
+1. Va sur https://www.npmjs.com/settings/YOUR_NPM_USERNAME/tokens
 2. Clique sur "Generate New Token" → "Classic Token"
 3. Sélectionne "Automation" (pour CI/CD)
 4. Copie le token généré
@@ -32,7 +32,7 @@ Ce fichier explique les secrets à configurer dans GitHub pour le déploiement a
 
 ### 1. `PORTAINER_URL`
 **Description**: URL de ton instance Portainer  
-**Exemple**: `https://portainer.rankorr.red`  
+**Exemple**: `https://portainer.your-domain.com`
 **Comment l'obtenir**: C'est l'URL que tu utilises pour accéder à Portainer
 
 ---
@@ -56,8 +56,8 @@ Ce fichier explique les secrets à configurer dans GitHub pour le déploiement a
 **Description**: ID de la stack tchoutchou dans Portainer  
 **Exemple**: `6`  
 **Comment l'obtenir**: 
-1. Va dans Portainer → Stacks → tchoutchou
-2. Regarde l'URL : `https://portainer.rankorr.red/#!/[ENDPOINT_ID]/docker/stacks/[STACK_NAME]?id=[STACK_ID]`
+1. Va dans Portainer → Stacks → ta stack
+2. Regarde l'URL : `https://portainer.your-domain.com/#!/[ENDPOINT_ID]/docker/stacks/[STACK_NAME]?id=[STACK_ID]`
 3. Le paramètre `id=` contient le STACK_ID
 
 ---
@@ -68,7 +68,7 @@ Ce fichier explique les secrets à configurer dans GitHub pour le déploiement a
 **Comment l'obtenir**: 
 1. Dans la même URL de la stack
 2. Le numéro après `#!/` est l'endpoint ID
-3. Exemple : `https://portainer.rankorr.red/#!/3/...` → endpoint ID = `3`
+3. Exemple : `https://portainer.your-domain.com/#!/3/...` → endpoint ID = `3`
 
 ---
 
@@ -163,14 +163,14 @@ Le tout en **~1 minute** ! 🚀
 
 Avant de lancer le déploiement automatique, assure-toi que dans Portainer:
 
-### 1. La stack `tchoutchou` existe
+### 1. La stack existe
 - Créée depuis un repository Git
-- Repository URL : `https://github.com/TON_USERNAME/tchoutchou-mcp`
+- Repository URL : `https://github.com/YOUR_USERNAME/tchoutchou-mcp`
 - Branch : `main`
 - Compose path : `docker-compose.yml`
 
 ### 2. Le réseau Docker existe
-- Nom : `playlist-server_web` (ou `traefik` selon ta config)
+- Nom : Celui défini dans ton docker-compose (ex: `web`, `traefik`)
 - Type : External
 - Utilisé par Traefik
 
@@ -195,6 +195,5 @@ Avant de lancer le déploiement automatique, assure-toi que dans Portainer:
 
 ---
 
-**Maintenu par**: Jessy Bonnotte  
-**Dernière mise à jour**: 2025-11-02
+**Dernière mise à jour**: 2025-11-05
 
