@@ -1,6 +1,6 @@
 # 🚂 TchouTchou MCP - French Trains Search for ChatGPT
 
-Une application ChatGPT qui permet de rechercher des trains en France avec une **interface visuelle interactive** incluant une carte, des horaires en temps réel, et la comparaison d'itinéraires.
+A ChatGPT application that allows you to search for trains in France with an **interactive visual interface** including a map, real-time schedules, and route comparison.
 
 [![Deploy Status](https://github.com/Shyzkanza/tchoutchou-mcp/actions/workflows/deploy.yml/badge.svg)](https://github.com/Shyzkanza/tchoutchou-mcp/actions/workflows/deploy.yml)
 [![npm version](https://img.shields.io/npm/v/@shyzus/tchoutchou-mcp)](https://www.npmjs.com/package/@shyzus/tchoutchou-mcp)
@@ -15,85 +15,85 @@ Une application ChatGPT qui permet de rechercher des trains en France avec une *
 
 ## ⚠️ Disclaimer
 
-**Ce projet est indépendant et non-officiel.**
+**This project is independent and unofficial.**
 
-- ❌ **Non affilié** à la SNCF, Keolis, ou Kisio Digital
-- ❌ **Non sponsorisé** par ces organisations
-- ✅ Utilise les **données publiques** de l'API [Navitia](https://www.navitia.io/)
-- ✅ Projet à but éducatif et pratique
+- ❌ **Not affiliated** with SNCF, Keolis, or Kisio Digital
+- ❌ **Not sponsored** by these organizations
+- ✅ Uses **public data** from the [Navitia](https://www.navitia.io/) API
+- ✅ Educational and practical purpose project
 
-Les données de transport proviennent de l'API Navitia, qui agrège les données ouvertes des réseaux de transport français.
+Transportation data comes from the Navitia API, which aggregates open data from French transportation networks.
 
-## 🎯 Qu'est-ce que c'est ?
+## 🎯 What is it?
 
-Cette application permet à **ChatGPT** d'accéder aux données de transport SNCF et d'afficher les résultats dans une **interface React interactive** directement dans la conversation.
+This application allows **ChatGPT** to access SNCF transportation data and display results in an **interactive React interface** directly in the conversation.
 
-### ✨ Fonctionnalités
+### ✨ Features
 
-- 🔍 **Recherche de gares** - Trouvez n'importe quelle gare en France par autocomplétion
-- 📍 **Recherche d'adresses** - Convertissez une adresse ou lieu en coordonnées GPS (Nominatim)
-- 🗺️ **Points d'intérêt proches** - Trouvez les arrêts de transport les plus proches d'une position GPS
-- 🚄 **Horaires en temps réel** - Prochains départs et arrivées en direct avec interface interactive
-- 🗺️ **Calcul d'itinéraires** - Trajet complet avec correspondances
-- 📊 **Interfaces visuelles** - Composants React intégrés dans ChatGPT avec :
-  - **JourneyViewer** : Carte interactive avec zoom adaptatif, comparaison d'itinéraires avec onglets
-  - **DeparturesViewer** : Tableau des départs avec horaires, retards, quais, et carte du trajet
-  - **ArrivalsViewer** : Tableau des arrivées avec provenance, horaires, retards, et carte du trajet
-  - **AddressMapViewer** : Affichage d'un point sur une carte interactive
-  - Mode plein écran pour toutes les cartes
-  - Détails des horaires, correspondances et arrêts intermédiaires
+- 🔍 **Station search** - Find any station in France via autocomplete
+- 📍 **Address search** - Convert an address or place into GPS coordinates (Nominatim)
+- 🗺️ **Nearby points of interest** - Find the nearest transportation stops from a GPS position
+- 🚄 **Real-time schedules** - Live next departures and arrivals with interactive interface
+- 🗺️ **Route calculation** - Complete journey with connections
+- 📊 **Visual interfaces** - React components integrated in ChatGPT with:
+  - **JourneyViewer**: Interactive map with adaptive zoom, route comparison with tabs
+  - **DeparturesViewer**: Departures table with schedules, delays, platforms, and route map
+  - **ArrivalsViewer**: Arrivals table with origin, schedules, delays, and route map
+  - **AddressMapViewer**: Display a point on an interactive map
+  - Full screen mode for all maps
+  - Details of schedules, connections and intermediate stops
 
-### 💬 Exemple d'utilisation
+### 💬 Usage example
 
-Dans ChatGPT, demandez simplement :
+In ChatGPT, simply ask:
 
-> "Trouve-moi un train de Paris à Lyon pour demain matin vers 8h"
+> "Find me a train from Paris to Lyon for tomorrow morning around 8am"
 
-ChatGPT va :
-1. Chercher les gares de Paris et Lyon
-2. Calculer les itinéraires disponibles
-3. **Afficher une interface interactive** avec carte et horaires
+ChatGPT will:
+1. Search for Paris and Lyon stations
+2. Calculate available routes
+3. **Display an interactive interface** with map and schedules
 
 ---
 
-## 🏗️ Architecture : App ChatGPT MCP
+## 🏗️ Architecture: ChatGPT MCP App
 
-### Qu'est-ce qu'une App ChatGPT ?
+### What is a ChatGPT App?
 
-Les **Apps ChatGPT** (via [Apps SDK](https://developers.openai.com/apps-sdk)) permettent d'étendre ChatGPT avec :
-- **Des outils personnalisés** (appeler des APIs externes)
-- **Des interfaces visuelles** (composants React dans la conversation)
-- **Des données en temps réel** (informations actualisées)
+**ChatGPT Apps** (via [Apps SDK](https://developers.openai.com/apps-sdk)) allow you to extend ChatGPT with:
+- **Custom tools** (call external APIs)
+- **Visual interfaces** (React components in the conversation)
+- **Real-time data** (up-to-date information)
 
-### Comment ça fonctionne ?
+### How does it work?
 
 ```
 ┌─────────────┐         ┌──────────────┐         ┌──────────────┐
-│   ChatGPT   │ ◄─────► │  Serveur MCP │ ◄─────► │  API SNCF    │
+│   ChatGPT   │ ◄─────► │  MCP Server  │ ◄─────► │  SNCF API    │
 │             │  JSON   │  (Node.js)   │  HTTP   │  (Navitia)   │
-│  + UI React │ ─────►  │  + React UI  │         │              │
+│  + React UI │ ─────►  │  + React UI  │         │              │
 └─────────────┘         └──────────────┘         └──────────────┘
 ```
 
-1. **ChatGPT** appelle votre serveur MCP via le protocole [Model Context Protocol](https://modelcontextprotocol.io/)
-2. **Le serveur MCP** récupère les données de l'API SNCF
-3. **L'interface React** s'affiche automatiquement dans ChatGPT avec les résultats
+1. **ChatGPT** calls your MCP server via the [Model Context Protocol](https://modelcontextprotocol.io/)
+2. **The MCP server** fetches data from the SNCF API
+3. **The React interface** automatically displays in ChatGPT with the results
 
-### Protocole MCP
+### MCP Protocol
 
-MCP (Model Context Protocol) est un standard ouvert créé par Anthropic qui permet aux LLMs d'accéder à des données et outils externes de manière sécurisée. C'est utilisé par :
+MCP (Model Context Protocol) is an open standard created by Anthropic that allows LLMs to access external data and tools securely. It is used by:
 - ChatGPT (via Apps SDK)
 - Claude Desktop
 - Cursor
-- Autres clients MCP
+- Other MCP clients
 
 ---
 
-## 🚀 Démarrage Rapide
+## 🚀 Quick Start
 
-### Utilisation avec Cursor / Claude Desktop / Warp
+### Use with Cursor / Claude Desktop / Warp
 
-**Le plus simple** - Installez le client npm qui se connecte au serveur distant :
+**The easiest way** - Install the npm client that connects to the remote server:
 
 ```json
 {
@@ -106,161 +106,161 @@ MCP (Model Context Protocol) est un standard ouvert créé par Anthropic qui per
 }
 ```
 
-**Emplacements des fichiers de config :**
-- **Cursor** : `~/.cursor/mcp.json` (macOS/Linux) ou `%APPDATA%\Cursor\mcp.json` (Windows)
-- **Claude Desktop** : `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS)
-- **Warp** : Dans les settings de Warp AI
+**Config file locations:**
+- **Cursor**: `~/.cursor/mcp.json` (macOS/Linux) or `%APPDATA%\Cursor\mcp.json` (Windows)
+- **Claude Desktop**: `~/Library/Application Support/Claude/claude_desktop_config.json` (macOS)
+- **Warp**: In Warp AI settings
 
 ---
 
-### Utilisation avec ChatGPT
+### Use with ChatGPT
 
-Un serveur de production est déjà disponible et prêt à l'emploi !
+A production server is already available and ready to use!
 
-**URL du serveur** : `https://tchoutchou-mcp.rankorr.red/mcp`
+**Server URL**: `https://tchoutchou-mcp.rankorr.red/mcp`
 
-#### Configuration dans ChatGPT
+#### ChatGPT Configuration
 
-1. **Avoir un compte ChatGPT avec abonnement** (ChatGPT Plus, Team, ou Enterprise)
-2. **Ouvrir ChatGPT dans votre navigateur** → Allez dans les **Paramètres** (⚙️)
-3. **Aller dans "Applis et connecteurs"** (Apps & Connectors)
-4. **Activer le mode développeur** :
-   - Dans **"Paramètres avancés"**, activez le **mode développeur**
-   - Revenez en arrière
-5. **Créer une nouvelle application** :
-   - Le bouton **"Créer"** apparaît maintenant en haut à droite
-   - Cliquez dessus
-   - Remplissez le formulaire :
-     - **Nom** : "TchouTchou SNCF" (ou autre nom)
-     - **Image** : Ajoutez une icône/image (optionnel)
-     - **URL du serveur** : `https://tchoutchou-mcp.rankorr.red/mcp`
-     - **Authentification** : Sélectionnez **"Aucune"** (None)
-   - Cliquez sur **"Créer"**
-6. **L'application est maintenant disponible** dans ChatGPT et s'activera automatiquement quand vous demanderez à ChatGPT de l'utiliser
+1. **Have a ChatGPT account with subscription** (ChatGPT Plus, Team, or Enterprise)
+2. **Open ChatGPT in your browser** → Go to **Settings** (⚙️)
+3. **Go to "Apps & Connectors"**
+4. **Enable developer mode**:
+   - In **"Advanced Settings"**, enable **developer mode**
+   - Go back
+5. **Create a new application**:
+   - The **"Create"** button now appears in the top right
+   - Click on it
+   - Fill in the form:
+     - **Name**: "TchouTchou SNCF" (or another name)
+     - **Image**: Add an icon/image (optional)
+     - **Server URL**: `https://tchoutchou-mcp.rankorr.red/mcp`
+     - **Authentication**: Select **"None"**
+   - Click **"Create"**
+6. **The application is now available** in ChatGPT and will activate automatically when you ask ChatGPT to use it
 
-#### Tester !
+#### Test it!
 
-Posez une question dans ChatGPT :
-> "Trouve-moi un train de Paris à Lyon pour demain matin"
+Ask a question in ChatGPT:
+> "Find me a train from Paris to Lyon for tomorrow morning"
 
-Ou pour tester directement :
-> "Utilise TchouTchou SNCF pour trouver les prochains départs de Montpellier Saint-Roch"
+Or to test directly:
+> "Use TchouTchou SNCF to find the next departures from Montpellier Saint-Roch"
 
-L'interface interactive devrait s'afficher ! 🎉
+The interactive interface should appear! 🎉
 
-### Pour développeurs - Installation locale
+### For developers - Local installation
 
 ```bash
-# 1. Cloner le projet
+# 1. Clone the project
 git clone https://github.com/Shyzkanza/tchoutchou-mcp.git
 cd tchoutchou-mcp
 
-# 2. Installer les dépendances
+# 2. Install dependencies
 npm install
 cd web && npm install && cd ..
 
-# 3. Builder
+# 3. Build
 npm run build
 
-# 4. Utiliser en local
+# 4. Use locally
 npx @modelcontextprotocol/inspector node dist/index.js
 ```
 
 ---
 
-## 📱 Déploiement et Développement
+## 📱 Deployment and Development
 
-> **🔒 Configuration des secrets CI/CD :** Pour déployer automatiquement sur un VPS avec GitHub Actions et Portainer, consultez [SECRETS.md](SECRETS.md) pour la configuration des secrets GitHub.
+> **🔒 CI/CD secrets configuration:** To automatically deploy to a VPS with GitHub Actions and Portainer, see [SECRETS.md](SECRETS.md) for GitHub secrets configuration.
 
-> **💡 Pour utiliser l'application dans ChatGPT**, consultez la section [🚀 Démarrage Rapide](#-démarrage-rapide) ci-dessus pour les instructions complètes.
+> **💡 To use the application in ChatGPT**, see the [🚀 Quick Start](#-quick-start) section above for complete instructions.
 
-### Option 1 : Test Local avec ngrok (Pour développement)
+### Option 1: Local Testing with ngrok (For development)
 
-#### 1. Démarrer le serveur HTTP
+#### 1. Start the HTTP server
 
 ```bash
 npm run start:http
 ```
 
-Le serveur démarre sur `http://localhost:3000`
+The server starts on `http://localhost:3000`
 
-#### 2. Exposer avec ngrok
+#### 2. Expose with ngrok
 
-Dans un **nouveau terminal** :
+In a **new terminal**:
 
 ```bash
-# Installer ngrok si nécessaire
+# Install ngrok if necessary
 brew install ngrok  # macOS
-# ou télécharger depuis https://ngrok.com/download
+# or download from https://ngrok.com/download
 
-# Exposer le port 3000
+# Expose port 3000
 ngrok http 3000
 ```
 
-Vous obtenez une URL publique comme :
+You get a public URL like:
 ```
 https://abc123.ngrok-free.dev
 ```
 
-**Important** : Notez l'URL complète avec `/mcp` à la fin : `https://abc123.ngrok-free.dev/mcp`
+**Important**: Note the complete URL with `/mcp` at the end: `https://abc123.ngrok-free.dev/mcp`
 
-#### 3. Configurer l'application dans ChatGPT
+#### 3. Configure the application in ChatGPT
 
-Suivez les instructions de configuration dans la section [🚀 Démarrage Rapide](#-démarrage-rapide), en utilisant votre URL ngrok (`https://votre-url.ngrok-free.dev/mcp`) au lieu de l'URL de production.
-
----
-
-### Option 2 : Déployer votre propre serveur (Pour développeurs)
-
-> **Note** : Si vous voulez simplement utiliser l'application, consultez la section [🚀 Démarrage Rapide](#-démarrage-rapide) qui utilise le serveur de production déjà disponible.
-
-Ce projet inclut un workflow GitHub Actions qui déploie automatiquement sur un VPS avec Docker et Portainer.
-
-#### **Déploiement VPS avec GitHub Actions**
-
-1. **Configurez les secrets GitHub** selon [SECRETS.md](SECRETS.md)
-2. **Push sur la branche `main`**
-3. GitHub Actions va automatiquement :
-   - ✅ Tester le code TypeScript
-   - ✅ Publier sur npm (`@shyzus/tchoutchou-mcp`)
-   - ✅ Déployer sur votre VPS via Portainer
-   - ✅ Vérifier le health check
-
-**Avantages** :
-- Déploiement automatique à chaque push
-- SSL gratuit avec Traefik + Let's Encrypt
-- Health monitoring intégré
-- Logs centralisés
-
-#### **Autres plateformes cloud**
-
-Vous pouvez également déployer sur :
-- **Railway** - Déploiement automatique depuis GitHub
-- **Render** - Service managé avec SSL gratuit
-- **Fly.io** - Edge computing avec déploiement global
-- **Google Cloud Run** - Serverless avec scale automatique
-
-Consultez le [guide de déploiement Apps SDK](https://developers.openai.com/apps-sdk/deploy) pour plus de détails.
-
-#### **Configurer votre serveur dans ChatGPT**
-
-Une fois déployé :
-1. Notez l'URL de votre serveur : `https://votre-domaine.com/mcp`
-2. Suivez les instructions dans [🚀 Démarrage Rapide](#-démarrage-rapide)
+Follow the configuration instructions in the [🚀 Quick Start](#-quick-start) section, using your ngrok URL (`https://your-url.ngrok-free.dev/mcp`) instead of the production URL.
 
 ---
 
-## 🧪 Test en Local (sans ChatGPT)
+### Option 2: Deploy your own server (For developers)
 
-### Avec Cursor (l'IDE que vous utilisez)
+> **Note**: If you just want to use the application, see the [🚀 Quick Start](#-quick-start) section which uses the production server already available.
 
-Le serveur MCP fonctionne déjà dans Cursor ! Posez-moi une question sur les trains et je vais utiliser le serveur.
+This project includes a GitHub Actions workflow that automatically deploys to a VPS with Docker and Portainer.
 
-### Avec Claude Desktop
+#### **VPS Deployment with GitHub Actions**
 
-1. Installer [Claude Desktop](https://claude.ai/download)
+1. **Configure GitHub secrets** according to [SECRETS.md](SECRETS.md)
+2. **Push to the `main` branch**
+3. GitHub Actions will automatically:
+   - ✅ Test TypeScript code
+   - ✅ Publish to npm (`@shyzus/tchoutchou-mcp`)
+   - ✅ Deploy to your VPS via Portainer
+   - ✅ Check health status
 
-2. Configurer dans `~/Library/Application Support/Claude/claude_desktop_config.json` :
+**Benefits**:
+- Automatic deployment on each push
+- Free SSL with Traefik + Let's Encrypt
+- Integrated health monitoring
+- Centralized logs
+
+#### **Other cloud platforms**
+
+You can also deploy on:
+- **Railway** - Automatic deployment from GitHub
+- **Render** - Managed service with free SSL
+- **Fly.io** - Edge computing with global deployment
+- **Google Cloud Run** - Serverless with automatic scaling
+
+See the [Apps SDK deployment guide](https://developers.openai.com/apps-sdk/deploy) for more details.
+
+#### **Configure your server in ChatGPT**
+
+Once deployed:
+1. Note your server URL: `https://your-domain.com/mcp`
+2. Follow the instructions in [🚀 Quick Start](#-quick-start)
+
+---
+
+## 🧪 Local Testing (without ChatGPT)
+
+### With Cursor (the IDE you're using)
+
+The MCP server already works in Cursor! Ask me a question about trains and I'll use the server.
+
+### With Claude Desktop
+
+1. Install [Claude Desktop](https://claude.ai/download)
+
+2. Configure in `~/Library/Application Support/Claude/claude_desktop_config.json`:
 
 ```json
 {
@@ -268,208 +268,208 @@ Le serveur MCP fonctionne déjà dans Cursor ! Posez-moi une question sur les tr
     "tchoutchou-mcp": {
       "command": "node",
       "args": [
-        "/chemin/absolu/vers/tchoutchou-mcp/dist/index.js"
+        "/absolute/path/to/tchoutchou-mcp/dist/index.js"
       ]
     }
   }
 }
 ```
 
-3. Redémarrer Claude Desktop
-4. L'icône MCP 🔌 apparaît en bas à gauche
+3. Restart Claude Desktop
+4. The MCP icon 🔌 appears in the bottom left
 
-### Avec l'inspecteur MCP
+### With the MCP inspector
 
 ```bash
 npx @modelcontextprotocol/inspector node dist/index.js
 ```
 
-Ouvre une interface web pour tester tous les tools.
+Opens a web interface to test all tools.
 
 ---
 
-## 📂 Structure du Projet
+## 📂 Project Structure
 
 ```
 tchoutchou-mcp/
-├── src/                          # Code du serveur MCP
-│   ├── index.ts                  # Serveur MCP (stdio pour Cursor/Claude)
-│   ├── http-server.ts            # Serveur HTTP (pour ChatGPT)
-│   ├── types.ts                  # Types TypeScript
+├── src/                          # MCP server code
+│   ├── index.ts                  # MCP server (stdio for Cursor/Claude)
+│   ├── http-server.ts            # HTTP server (for ChatGPT)
+│   ├── types.ts                  # TypeScript types
 │   ├── client/
-│   │   └── sncfApiClient.ts     # Client API SNCF Navitia
+│   │   └── sncfApiClient.ts     # SNCF Navitia API client
 │   └── tools/
-│       ├── searchStations.ts    # 🔍 Recherche de gares
-│       ├── searchAddress.ts     # 📍 Recherche d'adresses (Nominatim)
-│       ├── placesNearby.ts     # 🗺️ Points d'intérêt proches (GPS)
-│       ├── departures.ts        # 🚄 Horaires départs (+ UI)
-│       ├── arrivals.ts          # 🚄 Horaires arrivées (+ UI)
-│       ├── journeys.ts          # 🗺️ Calcul d'itinéraires (+ UI)
-│       └── addressMap.ts        # 🗺️ Affichage carte d'une adresse (+ UI)
+│       ├── searchStations.ts    # 🔍 Station search
+│       ├── searchAddress.ts     # 📍 Address search (Nominatim)
+│       ├── placesNearby.ts     # 🗺️ Nearby points of interest (GPS)
+│       ├── departures.ts        # 🚄 Departure times (+ UI)
+│       ├── arrivals.ts          # 🚄 Arrival times (+ UI)
+│       ├── journeys.ts          # 🗺️ Route calculation (+ UI)
+│       └── addressMap.ts        # 🗺️ Address map display (+ UI)
 │
-├── web/                          # Interface React pour ChatGPT
+├── web/                          # React interface for ChatGPT
 │   ├── src/
-│   │   ├── component.tsx        # Point d'entrée avec routing
-│   │   ├── JourneyViewer.tsx   # Composant itinéraires
-│   │   ├── DeparturesViewer.tsx # Composant départs
-│   │   ├── ArrivalsViewer.tsx  # Composant arrivées
-│   │   ├── AddressMapViewer.tsx # Composant carte d'adresse
-│   │   ├── MapView.tsx          # Carte interactive Leaflet
-│   │   ├── hooks.ts             # Hooks window.openai
-│   │   ├── types.ts             # Types React
-│   │   └── utils.ts             # Formatage dates/durées
+│   │   ├── component.tsx        # Entry point with routing
+│   │   ├── JourneyViewer.tsx   # Journey component
+│   │   ├── DeparturesViewer.tsx # Departures component
+│   │   ├── ArrivalsViewer.tsx  # Arrivals component
+│   │   ├── AddressMapViewer.tsx # Address map component
+│   │   ├── MapView.tsx          # Leaflet interactive map
+│   │   ├── hooks.ts             # window.openai hooks
+│   │   ├── types.ts             # React types
+│   │   └── utils.ts             # Date/duration formatting
 │   └── dist/
-│       └── component.js         # Bundle (généré)
+│       └── component.js         # Bundle (generated)
 │
-├── dist/                         # Code compilé (généré)
-├── package.json                  # Dépendances serveur
-├── tsconfig.json                 # Config TypeScript
-└── README.md                     # Ce fichier
+├── dist/                         # Compiled code (generated)
+├── package.json                  # Server dependencies
+├── tsconfig.json                 # TypeScript config
+└── README.md                     # This file
 ```
 
 ---
 
-## 🛠️ Commandes Disponibles
+## 🛠️ Available Commands
 
 ```bash
-# Développement
-npm run dev              # Mode dev avec hot-reload (stdio)
-npm run dev:http         # Mode dev serveur HTTP
+# Development
+npm run dev              # Dev mode with hot-reload (stdio)
+npm run dev:http         # Dev mode HTTP server
 
 # Production
-npm run build            # Compile serveur + UI
-npm run build:ui         # Compile uniquement l'UI
-npm run start            # Lance serveur stdio
-npm run start:http       # Lance serveur HTTP (port 3000)
+npm run build            # Compile server + UI
+npm run build:ui         # Compile UI only
+npm run start            # Start stdio server
+npm run start:http       # Start HTTP server (port 3000)
 ```
 
 ---
 
-## 🔧 Configuration Avancée
+## 🔧 Advanced Configuration
 
-### Variables d'environnement
+### Environment variables
 
-Créez un fichier `.env` :
+Create a `.env` file:
 
 ```bash
-PORT=3000                          # Port du serveur HTTP
-SERVER_URL=https://votre-app.com  # URL publique (optionnel)
+PORT=3000                          # HTTP server port
+SERVER_URL=https://your-app.com    # Public URL (optional)
 ```
 
-### Personnaliser l'API SNCF
+### Customize the SNCF API
 
-L'API SNCF (Navitia) est publique mais vous pouvez obtenir une clé pour plus de requêtes :
+The SNCF API (Navitia) is public but you can get a key for more requests:
 
-1. Créez un compte sur [Navitia.io](https://www.navitia.io/)
-2. Obtenez votre token API
-3. Modifiez `src/client/sncfApiClient.ts` :
+1. Create an account on [Navitia.io](https://www.navitia.io/)
+2. Get your API token
+3. Modify `src/client/sncfApiClient.ts`:
 
 ```typescript
-const SNCF_API_TOKEN = 'votre-token-ici';
+const SNCF_API_TOKEN = 'your-token-here';
 ```
 
-### Ajouter d'autres réseaux de transport
+### Add other transportation networks
 
-L'API Navitia supporte tous les transports français :
-- `coverage/fr-idf` - Île-de-France (métro, RER, bus)
-- `coverage/fr-sw` - Sud-Ouest
+The Navitia API supports all French transportation:
+- `coverage/fr-idf` - Île-de-France (metro, RER, bus)
+- `coverage/fr-sw` - South-West
 - Etc.
 
-Ajoutez de nouveaux tools dans `src/tools/` !
+Add new tools in `src/tools/`!
 
 ---
 
-## 🎨 Personnaliser l'Interface
+## 🎨 Customize the Interface
 
-### Modifier l'UI React
+### Modify the React UI
 
-Les fichiers principaux :
+Main files:
 
-- **`web/src/component.tsx`** - Point d'entrée avec routing conditionnel
-- **`web/src/JourneyViewer.tsx`** - Interface des itinéraires
-- **`web/src/DeparturesViewer.tsx`** - Interface des départs
-- **`web/src/ArrivalsViewer.tsx`** - Interface des arrivées
-- **`web/src/AddressMapViewer.tsx`** - Interface de carte d'adresse
-- **`web/src/MapView.tsx`** - Composant carte Leaflet réutilisable
-- **`web/src/utils.ts`** - Formatage des dates/durées
+- **`web/src/component.tsx`** - Entry point with conditional routing
+- **`web/src/JourneyViewer.tsx`** - Journey interface
+- **`web/src/DeparturesViewer.tsx`** - Departures interface
+- **`web/src/ArrivalsViewer.tsx`** - Arrivals interface
+- **`web/src/AddressMapViewer.tsx`** - Address map interface
+- **`web/src/MapView.tsx`** - Reusable Leaflet map component
+- **`web/src/utils.ts`** - Date/duration formatting
 
-Après modifications :
+After modifications:
 
 ```bash
-npm run build:ui  # Recompile l'UI
-# Relancez le serveur
+npm run build:ui  # Recompile the UI
+# Restart the server
 ```
 
-### Thème et style
+### Theme and style
 
-L'interface utilise du CSS inline pour la compatibilité. Pour ajouter des styles globaux, modifiez le HTML dans `src/http-server.ts` :
+The interface uses inline CSS for compatibility. To add global styles, modify the HTML in `src/http-server.ts`:
 
 ```typescript
 const html = `<!DOCTYPE html>
 <html>
 <head>
   <style>
-    /* Vos styles globaux */
+    /* Your global styles */
   </style>
 </head>
 ...`;
 ```
 
-### Ajouter des fonctionnalités
+### Add features
 
-Exemples d'ajouts possibles :
-- 💰 Affichage des tarifs
-- ⭐ Favoris de gares
-- 🔔 Alertes de retard
-- 📅 Sauvegarder un trajet
-- 🎫 Lien vers la réservation
+Examples of possible additions:
+- 💰 Price display
+- ⭐ Favorite stations
+- 🔔 Delay alerts
+- 📅 Save a trip
+- 🎫 Link to booking
 
 ---
 
-## 📚 Ressources & Documentation
+## 📚 Resources & Documentation
 
-### Documentation officielle
+### Official documentation
 
-- [OpenAI Apps SDK](https://developers.openai.com/apps-sdk) - Guide complet Apps ChatGPT
-- [Apps SDK - MCP Server](https://developers.openai.com/apps-sdk/build/mcp-server) - Config serveur
-- [Apps SDK - Custom UX](https://developers.openai.com/apps-sdk/build/custom-ux) - Composants React
-- [Model Context Protocol](https://modelcontextprotocol.io/) - Spec MCP
-- [MCP SDK TypeScript](https://github.com/modelcontextprotocol/typescript-sdk) - SDK Node.js
-- [API SNCF Navitia](https://doc.navitia.io/) - Doc API transport
+- [OpenAI Apps SDK](https://developers.openai.com/apps-sdk) - Complete ChatGPT Apps guide
+- [Apps SDK - MCP Server](https://developers.openai.com/apps-sdk/build/mcp-server) - Server config
+- [Apps SDK - Custom UX](https://developers.openai.com/apps-sdk/build/custom-ux) - React components
+- [Model Context Protocol](https://modelcontextprotocol.io/) - MCP spec
+- [MCP SDK TypeScript](https://github.com/modelcontextprotocol/typescript-sdk) - Node.js SDK
+- [SNCF Navitia API](https://doc.navitia.io/) - Transport API docs
 
-### Communauté
+### Community
 
-- [MCP Servers Repository](https://github.com/modelcontextprotocol/servers) - Exemples officiels
-- [OpenAI Apps Examples](https://github.com/openai/chatgpt-apps-examples) - Exemples d'apps
+- [MCP Servers Repository](https://github.com/modelcontextprotocol/servers) - Official examples
+- [OpenAI Apps Examples](https://github.com/openai/chatgpt-apps-examples) - App examples
 
 ---
 
 ## 🐛 Debugging & Troubleshooting
 
-### Le serveur ne démarre pas
+### Server won't start
 
 ```bash
-# Vérifier que Node.js est installé
-node --version  # Doit être 18+
+# Check that Node.js is installed
+node --version  # Must be 18+
 
-# Vérifier que les dépendances sont installées
+# Check that dependencies are installed
 npm install
 cd web && npm install && cd ..
 
-# Rebuild complet
+# Full rebuild
 npm run build
 ```
 
-### L'UI ne s'affiche pas dans ChatGPT
+### UI doesn't display in ChatGPT
 
-1. **Vérifier les logs ngrok** - Voir si ChatGPT fait des requêtes
-2. **Vérifier le serveur** - `http://localhost:3000/health` doit répondre
-3. **Rafraîchir le connecteur** dans ChatGPT (Settings → Apps → Refresh)
-4. **Vérifier le CSP** - Les domaines autorisés dans `src/http-server.ts`
+1. **Check ngrok logs** - See if ChatGPT is making requests
+2. **Check the server** - `http://localhost:3000/health` must respond
+3. **Refresh the connector** in ChatGPT (Settings → Apps → Refresh)
+4. **Check the CSP** - Allowed domains in `src/http-server.ts`
 
-### Erreurs CORS
+### CORS errors
 
-Le serveur autorise toutes les origines en dev. En production, restreignez dans `src/http-server.ts` :
+The server allows all origins in dev. In production, restrict in `src/http-server.ts`:
 
 ```typescript
 res.setHeader('Access-Control-Allow-Origin', 'https://chatgpt.com');
@@ -477,7 +477,7 @@ res.setHeader('Access-Control-Allow-Origin', 'https://chatgpt.com');
 
 ### Logs
 
-Les logs du serveur s'affichent dans le terminal. Pour plus de détails :
+Server logs display in the terminal. For more details:
 
 ```typescript
 console.log('MCP Request:', jsonRpcRequest.method);
@@ -485,63 +485,63 @@ console.log('MCP Request:', jsonRpcRequest.method);
 
 ---
 
-## 🚀 Utiliser ce Projet comme Modèle
+## 🚀 Use This Project as a Template
 
-Ce projet est un **template complet** pour créer vos propres apps ChatGPT avec interface React.
+This project is a **complete template** for creating your own ChatGPT apps with React interface.
 
-### Pour créer votre propre app :
+### To create your own app:
 
-1. **Dupliquez ce projet**
-2. **Remplacez l'API SNCF** par votre API
-3. **Modifiez les tools** dans `src/tools/`
-4. **Personnalisez l'UI React** dans `web/src/`
-5. **Déployez** !
+1. **Duplicate this project**
+2. **Replace the SNCF API** with your API
+3. **Modify the tools** in `src/tools/`
+4. **Customize the React UI** in `web/src/`
+5. **Deploy**!
 
-### Exemples d'apps possibles
+### Possible app examples
 
-- 🎬 **Cinéma** - Recherche de films et horaires de séances avec carte des cinémas
-- 🍽️ **Restaurants** - Réservations avec menu et photos
-- 🏨 **Hôtels** - Recherche et disponibilités avec galerie
-- 📦 **Livraison** - Suivi de colis avec carte en temps réel
-- 📰 **News** - Articles avec lecteur intégré
-- 🎵 **Musique** - Lecteur audio dans ChatGPT
-- 📊 **Analytics** - Graphiques et dashboards
+- 🎬 **Cinema** - Movie search and showtimes with cinema map
+- 🍽️ **Restaurants** - Reservations with menu and photos
+- 🏨 **Hotels** - Search and availability with gallery
+- 📦 **Delivery** - Package tracking with real-time map
+- 📰 **News** - Articles with integrated reader
+- 🎵 **Music** - Audio player in ChatGPT
+- 📊 **Analytics** - Charts and dashboards
 
-Les possibilités sont infinies ! 🚀
-
----
-
-## 📝 Licence
-
-MIT - Utilisez librement pour vos projets personnels ou commerciaux.
+The possibilities are endless! 🚀
 
 ---
 
-## 🙏 Crédits & Attributions
+## 📝 License
 
-- **Données Transport** - [Navitia API](https://www.navitia.io/) - Données ouvertes des transports français
-- **Cartes** - [OpenStreetMap](https://www.openstreetmap.org/) via [Leaflet](https://leafletjs.com/)
+MIT - Use freely for your personal or commercial projects.
+
+---
+
+## 🙏 Credits & Attributions
+
+- **Transportation Data** - [Navitia API](https://www.navitia.io/) - Open data from French transportation networks
+- **Maps** - [OpenStreetMap](https://www.openstreetmap.org/) via [Leaflet](https://leafletjs.com/)
 - **MCP Protocol** - [Anthropic](https://www.anthropic.com/)
 - **Apps SDK** - [OpenAI](https://openai.com/)
 
-### Données & Licences
+### Data & Licenses
 
-Les données de transport proviennent de l'API Navitia qui agrège :
-- Données SNCF (TGV, Intercités, TER)
-- Données de transport régional
-- Horaires théoriques et temps réel
+Transportation data comes from the Navitia API which aggregates:
+- SNCF data (TGV, Intercétés, TER)
+- Regional transportation data
+- Theoretical and real-time schedules
 
-Ces données sont mises à disposition par les opérateurs de transport dans le cadre de l'ouverture des données publiques.
+This data is provided by transportation operators as part of the open data initiative.
 
 ---
 
 ## 📞 Support
 
-Pour toute question :
-- 📖 Consultez la [documentation Apps SDK](https://developers.openai.com/apps-sdk)
-- 💬 Ouvrez une issue sur GitHub
-- 📧 Contactez l'équipe
+For any questions:
+- 📖 Check the [Apps SDK documentation](https://developers.openai.com/apps-sdk)
+- 💬 Open an issue on GitHub
+- 📧 Contact the team
 
 ---
 
-**Bon voyage avec votre app ChatGPT ! 🚂✨**
+**Have a great trip with your ChatGPT app! 🚂✨**

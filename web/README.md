@@ -1,6 +1,6 @@
 # TchouTchou Journeys UI Component
 
-Composant React pour afficher visuellement les itinéraires de trains en France dans ChatGPT via l'Apps SDK.
+React component to visually display train routes in France within ChatGPT via the Apps SDK.
 
 ## 📦 Installation
 
@@ -14,26 +14,26 @@ npm install
 npm run build
 ```
 
-Le fichier `dist/component.js` sera généré.
+The `dist/component.js` file will be generated.
 
-## 🚀 Développement
+## 🚀 Development
 
 ```bash
 npm run dev
 ```
 
-En mode watch pour rebuilder automatiquement lors des modifications.
+Watch mode to automatically rebuild on changes.
 
 ## 📝 Structure
 
-- `src/component.tsx` - Point d'entrée
-- `src/JourneyViewer.tsx` - Composant principal d'affichage
-- `src/hooks.ts` - Hooks React pour `window.openai`
-- `src/types.ts` - Types TypeScript
-- `src/utils.ts` - Utilitaires de formatage
+- `src/component.tsx` - Entry point
+- `src/JourneyViewer.tsx` - Main display component
+- `src/hooks.ts` - React hooks for `window.openai`
+- `src/types.ts` - TypeScript types
+- `src/utils.ts` - Formatting utilities
 
-## 🔗 Intégration avec le serveur MCP
+## 🔗 Integration with MCP server
 
-Le composant lit les données depuis `window.openai.toolOutput` qui contient la réponse JSON du tool `get_journeys` du serveur MCP TchouTchou (Node.js/TypeScript).
+The component reads data from `window.openai.toolOutput` which contains the JSON response from the `get_journeys` tool of the TchouTchou MCP server (Node.js/TypeScript).
 
 

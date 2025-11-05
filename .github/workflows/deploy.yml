@@ -140,7 +140,20 @@ jobs:
     - name: Build package
       run: npm run build
     
+    - name: Check if version already published
+      id: check-version
+      run: |
+        PACKAGE_VERSION=$(node -p "require('./package.json').version")
+        if npm view @shyzus/tchoutchou-mcp@$PACKAGE_VERSION version 2>/dev/null; then
+          echo "Version $PACKAGE_VERSION already published, skipping..."
+          echo "skip=true" >> $GITHUB_OUTPUT
+        else
+          echo "Version $PACKAGE_VERSION not published yet"
+          echo "skip=false" >> $GITHUB_OUTPUT
+        fi
+    
     - name: Publish to npm
+      if: steps.check-version.outputs.skip == 'false'
       run: npm publish --access public
       env:
         NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
