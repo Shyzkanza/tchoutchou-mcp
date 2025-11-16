@@ -1,7 +1,7 @@
 # 🧠 CONTEXT - TchouTchou MCP
 
-**Last update**: 2025-11-04  
-**Status**: In development - Ready for deployment
+**Last update**: 2025-11-17
+**Status**: In production - v1.0.2 released
 
 ---
 
@@ -131,6 +131,8 @@ tchoutchou-mcp/
 - [x] Implement `ArrivalsViewer` with complete interface
 - [x] Implement `AddressMapViewer` for GPS points display
 - [x] Add `search_address` and `places_nearby` tools for GPS workflow
+- [x] **Fix read-only metadata** - Add `openai/readOnly: true` to all tools to prevent confirmation prompts
+- [x] Create `OPENAI_APPS_SDK_REFERENCE.md` - Complete SDK documentation for future reference
 - [ ] Test on mobile
 - [ ] Optimize performance and UX
 
@@ -182,6 +184,55 @@ npm run dev:http
 ---
 
 ## 📝 Change History
+
+### 2025-11-17
+- ✅ **Enhanced map popups** to differentiate between boarding stops (🔼 Montée), alighting stops (🔽 Descente), pass-through stops (⚬ Passage), and transfers (🔄 Correspondance)
+  - Modified `web/src/MapView.tsx` to add `isBoarding` and `isAlighting` flags
+  - Detection logic based on first/last sections in `stop_date_times`
+  - Improved user experience with clear visual indicators
+- ✅ **Fixed map display in DeparturesViewer and ArrivalsViewer**:
+  - MapModal now properly renders MapContent component with route polylines and markers
+  - Fixed broken image icons issue (tiles not loading)
+  - Added maxZoom and subdomains to TileLayer for better compatibility
+- ✅ **Optimized JourneyViewer interface** for ChatGPT context efficiency:
+  - Factorized repetitive inline styles into constants object
+  - Removed debug information section (~66 lines)
+  - Reduced code from 825 to 719 lines (-13%)
+  - Maintained all functionality and visual quality
+- ✅ **Version bump to 1.0.2**:
+  - Created CHANGELOG.md with full version history
+  - Updated README.md npm badge to v1.0.2
+  - Prepared for npm deployment
+
+### 2025-11-16
+- ✅ **Added `last_section_mode` parameter to `get_journeys`**:
+  - Works like `first_section_mode` with multiple query params (e.g., `last_section_mode[]=walking&last_section_mode[]=bike`)
+  - Allows specifying transport modes for the last section of the journey
+  - Values: "walking" (default), "car", "bike", "bss", "ridesharing", "taxi"
+  - Example: `["walking", "bike"]` allows both walking and biking at the end of the journey
+- ✅ **Fixed missing `depth=3` parameter in `get_journeys`** (CRITICAL):
+  - Now sends `depth=3` to get maximum detail level from Navitia API
+  - This should fix:
+    - Missing fare/price information in journey results
+    - Incorrect section durations (first/last sections showing 0 minutes)
+    - Missing geojson and other detailed information
+  - Note: `get_departures` and `get_arrivals` already had `depth=3`
+  - React UI already displays prices when available (`journey.fare.total.value`)
+
+### 2025-11-15
+- ✅ **Created `OPENAI_APPS_SDK_REFERENCE.md`**: Comprehensive reference guide for OpenAI Apps SDK
+  - Synthesized documentation from https://developers.openai.com/apps-sdk
+  - Installation, setup, architecture, security best practices
+  - Design guidelines, troubleshooting, deployment guide
+  - Serves as context for future development sessions
+- ✅ **Fixed ChatGPT confirmation prompts issue**:
+  - Added `'openai/readOnly': true` metadata to ALL tools (7 tools)
+  - Modified both `src/http-server.ts` and `src/index.ts`
+  - All tools are read-only (no external state modification)
+  - ChatGPT will no longer ask for confirmation on every request
+- 📝 Tools marked as read-only:
+  - `search_stations`, `get_departures`, `get_arrivals`
+  - `get_journeys`, `places_nearby`, `search_address`, `display_address_map`
 
 ### 2025-11-04
 - ✅ Added `search_address` tool: Address → GPS conversion via Nominatim API
@@ -286,6 +337,7 @@ To add other viewers (departures, stations), two options:
 - ⚠️ CORS configured permissively in dev (restrict in prod if needed)
 - ⚠️ No rate limiting currently
 - ⚠️ No cache for Navitia API requests
+- ✅ ~~ChatGPT asking confirmation on every tool call~~ → FIXED (2025-11-15): Added `openai/readOnly: true`
 
 ---
 
@@ -297,6 +349,7 @@ To add other viewers (departures, stations), two options:
 - [Traefik Docs](https://doc.traefik.io/traefik/)
 - Portainer: https://portainer.rankorr.red/
 - **[SECRETS.md](SECRETS.md)**: GitHub secrets configuration for CI/CD with Portainer
+- **[OPENAI_APPS_SDK_REFERENCE.md](OPENAI_APPS_SDK_REFERENCE.md)**: Complete OpenAI Apps SDK reference guide (created 2025-11-15)
 
 ---
 

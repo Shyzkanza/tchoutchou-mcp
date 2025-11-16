@@ -12,19 +12,33 @@ export class JourneysTool {
     count: number = 5,
     maxNbTransfers?: number,
     wheelchair?: boolean,
-    timeframeDuration?: number
+    timeframeDuration?: number,
+    freeRadiusFrom?: number,
+    freeRadiusTo?: number,
+    maxDurationToPt?: number,
+    firstSectionMode?: string[],
+    lastSectionMode?: string[],
+    travelerType?: string,
+    walkingSpeed?: number
   ): Promise<JourneyToolOutput & { error?: string }> {
     try {
       const response = await this.client.getJourneys(
-        from, 
-        to, 
-        datetime, 
-        datetimeRepresents, 
+        from,
+        to,
+        datetime,
+        datetimeRepresents,
         count,
         'realtime',
         maxNbTransfers,
         wheelchair,
-        timeframeDuration
+        timeframeDuration,
+        freeRadiusFrom,
+        freeRadiusTo,
+        maxDurationToPt,
+        firstSectionMode,
+        lastSectionMode,
+        travelerType,
+        walkingSpeed
       );
       
       if (response.error) {

@@ -3,7 +3,7 @@
 A ChatGPT application that allows you to search for trains in France with an **interactive visual interface** including a map, real-time schedules, and route comparison.
 
 [![Deploy Status](https://github.com/Shyzkanza/tchoutchou-mcp/actions/workflows/deploy.yml/badge.svg)](https://github.com/Shyzkanza/tchoutchou-mcp/actions/workflows/deploy.yml)
-[![npm version](https://img.shields.io/npm/v/@shyzus/tchoutchou-mcp)](https://www.npmjs.com/package/@shyzus/tchoutchou-mcp)
+[![npm version](https://img.shields.io/badge/npm-v1.0.2-blue)](https://www.npmjs.com/package/@shyzus/tchoutchou-mcp)
 [![npm downloads](https://img.shields.io/npm/dm/@shyzus/tchoutchou-mcp)](https://www.npmjs.com/package/@shyzus/tchoutchou-mcp)
 [![Website Status](https://img.shields.io/website?url=https%3A%2F%2Ftchoutchou-mcp.rankorr.red%2Fhealth&label=API)](https://tchoutchou-mcp.rankorr.red/health)
 ![Node](https://img.shields.io/badge/node-18%2B-green)

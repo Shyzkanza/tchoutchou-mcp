@@ -96,8 +96,6 @@ server.setRequestHandler(ReadResourceRequestSchema, async (request) => {
 </head>
 <body>
   <div id="root"></div>
-  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script>
     window.__MCP_VIEW_TYPE__ = 'journey';
   </script>
@@ -135,8 +133,6 @@ ${componentBundle}
 <body>
   <div id="root"></div>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-  <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-  <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
   <script>
     window.__MCP_VIEW_TYPE__ = 'addressMap';
   </script>
@@ -166,6 +162,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
     tools: [
       {
         name: 'search_stations',
+        title: 'Search Train Stations',
         description: 'Search for train stations in France by name. REQUIRED FIRST STEP to get station IDs for get_departures/get_arrivals. Use this when user asks for departures/arrivals at a station (e.g., "Montpellier Saint-Roch"). Returns station names and stop_area_id that you MUST use with get_departures or get_arrivals. Example: User asks "départs à Montpellier" → search_stations("Montpellier Saint-Roch") → get stop_area_id → get_departures(stop_area_id).',
         inputSchema: {
           type: 'object',
@@ -177,9 +174,13 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           },
           required: ['query'],
         },
+        annotations: {
+          readOnlyHint: true
+        }
       },
       {
         name: 'get_departures',
+        title: 'Get Train Departures',
         description: 'Get next departures from a train station with real-time information (times, delays, platforms, etc.). WORKFLOW: First call search_stations with the station name (e.g., "Montpellier Saint-Roch") to get the stop_area_id, then use that ID with this tool. Example: search_stations("Montpellier Saint-Roch") → get stop_area_id → get_departures(stop_area_id). Returns interactive UI with departure times, delays, platforms, and line information.',
         inputSchema: {
           type: 'object',
@@ -211,9 +212,13 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           },
           required: ['stop_area_id'],
         },
+        annotations: {
+          readOnlyHint: true
+        }
       },
       {
         name: 'get_arrivals',
+        title: 'Get Train Arrivals',
         description: 'Get next arrivals at a train station with real-time information (times, delays, platforms, etc.). WORKFLOW: First call search_stations with the station name (e.g., "Montpellier Saint-Roch") to get the stop_area_id, then use that ID with this tool. Example: search_stations("Montpellier Saint-Roch") → get stop_area_id → get_arrivals(stop_area_id). Returns interactive UI with arrival times, delays, platforms, and line information.',
         inputSchema: {
           type: 'object',
@@ -221,10 +226,6 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             stop_area_id: {
               type: 'string',
               description: 'The station resource ID (e.g., "stop_area:SNCF:87391003" from search_stations or places_nearby). REQUIRED: use search_stations to find the ID first.',
-            },
-            from_datetime: {
-              type: 'string',
-              description: 'Optional: Start datetime in format YYYYMMDDTHHMMSS (e.g. 20240101T143000). Default: now',
             },
             duration: {
               type: 'number',
@@ -245,20 +246,24 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           },
           required: ['stop_area_id'],
         },
+        annotations: {
+          readOnlyHint: true
+        }
       },
       {
         name: 'get_journeys',
-        description: 'Calculate train journeys between two locations. ONLY accepts resource IDs (stop_area, stop_point, POI). Use places_nearby to find the nearest stop from GPS coordinates. Returns complete itineraries with connections, times, platforms, and walking sections. Supports real-time data. Displays an interactive UI.',
+        title: 'Calculate Train Journeys',
+        description: 'Calculate train journeys between two locations. IMPORTANT: (1) For train stations, ALWAYS use search_stations first to get resource IDs - this is more reliable. (2) For addresses/POIs, you can use GPS coordinates "longitude;latitude" BUT you MUST set large values: free_radius_from/to (minimum 1000-2000m), max_duration_to_pt (minimum 1200-1800s = 20-30min). Low values will return no results. (3) Resource IDs from search_stations/places_nearby always work and are preferred when available. Returns complete itineraries with connections, times, platforms, and walking sections. Supports real-time data. Displays an interactive UI.',
         inputSchema: {
           type: 'object',
           properties: {
             from: {
               type: 'string',
-              description: 'Origin resource ID (e.g., "stop_area:SNCF:87391003" from search_stations or places_nearby). Do NOT use raw GPS coordinates - use places_nearby first to get a resource_id.',
+              description: 'Origin: PREFERRED: resource ID from search_stations/places_nearby (e.g., "stop_area:SNCF:87391003"). For train stations, ALWAYS use search_stations first. Alternative: GPS coordinates "longitude;latitude" (e.g., "3.8767;43.6108") - only for addresses/POIs, requires large free_radius_from and max_duration_to_pt values.',
             },
             to: {
               type: 'string',
-              description: 'Destination resource ID (e.g., "stop_area:SNCF:87391003" from search_stations or places_nearby). Do NOT use raw GPS coordinates - use places_nearby first to get a resource_id.',
+              description: 'Destination: PREFERRED: resource ID from search_stations/places_nearby (e.g., "stop_area:SNCF:87686006"). For train stations, ALWAYS use search_stations first. Alternative: GPS coordinates "longitude;latitude" (e.g., "2.3522;48.8566") - only for addresses/POIs, requires large free_radius_to and max_duration_to_pt values.',
             },
             datetime: {
               type: 'string',
@@ -284,6 +289,36 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
               type: 'number',
               description: 'Optional: Search all journeys within the next X seconds (max 86400s = 24h). Useful to see all options in a time window.',
             },
+            free_radius_from: {
+              type: 'number',
+              description: 'REQUIRED when using GPS for "from": Radius in meters around departure point where stops are free to reach. IMPORTANT: Use large values (1000-2000m minimum, up to 5000m for rural areas) or you will get NO results. Default 0 does NOT work with GPS coordinates.',
+            },
+            free_radius_to: {
+              type: 'number',
+              description: 'REQUIRED when using GPS for "to": Radius in meters around arrival point where stops are free to reach. IMPORTANT: Use large values (1000-2000m minimum, up to 5000m for rural areas) or you will get NO results. Default 0 does NOT work with GPS coordinates.',
+            },
+            max_duration_to_pt: {
+              type: 'number',
+              description: 'REQUIRED when using GPS coordinates: Maximum duration in SECONDS to reach public transport (walking/biking time limit). IMPORTANT: Use large values (1200-1800s = 20-30min minimum, up to 3600s for rural areas) or you will get NO results. Applies to both departure and arrival.',
+            },
+            first_section_mode: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'Optional: Transport mode(s) for first section when using GPS coordinates. Values: "walking" (default), "car", "bike", "bss", "ridesharing", "taxi". Multiple values allowed. Example: ["walking", "bike"] allows both walking and biking at the start.',
+            },
+            last_section_mode: {
+              type: 'array',
+              items: { type: 'string' },
+              description: 'Optional: Transport mode(s) for last section when using GPS coordinates. Values: "walking" (default), "car", "bike", "bss", "ridesharing", "taxi". Multiple values allowed. Example: ["walking", "bike"] allows both walking and biking at the end.',
+            },
+            traveler_type: {
+              type: 'string',
+              description: 'Optional: Type of traveler affecting speed and accessibility. Options: "standard", "slow_walker", "fast_walker", "luggage", "wheelchair". Default: "standard".',
+            },
+            walking_speed: {
+              type: 'number',
+              description: 'Optional: Walking speed in meters/second. Default: 1.12 (4 km/h). Useful values: slow=0.83 (3km/h), normal=1.12 (4km/h), fast=1.39 (5km/h).',
+            },
           },
           required: ['from', 'to'],
         },
@@ -293,11 +328,19 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             'openai/outputTemplate': 'ui://journeys/viewer.html',
             'openai/toolInvocation/invoking': 'Recherche des meilleurs itinéraires...',
             'openai/toolInvocation/invoked': 'Itinéraires trouvés'
+          },
+          annotations: {
+            readOnlyHint: true
           }
-        } : {})
+        } : {
+          annotations: {
+            readOnlyHint: true
+          }
+        })
       },
       {
         name: 'search_address',
+        title: 'Search Address or Location',
         description: 'Search for an address or location and get GPS coordinates. Uses OpenStreetMap Nominatim API to convert addresses, place names, or points of interest into latitude/longitude coordinates.',
         inputSchema: {
           type: 'object',
@@ -317,9 +360,13 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
           },
           required: ['query'],
         },
+        annotations: {
+          readOnlyHint: true
+        }
       },
       {
         name: 'display_address_map',
+        title: 'Display Location on Map',
         description: 'Display a location on an interactive map. Shows a point on a map with optional label and zoom level.',
         inputSchema: {
           type: 'object',
@@ -349,8 +396,15 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
             'openai/outputTemplate': 'ui://address/map.html',
             'openai/toolInvocation/invoking': 'Affichage de la carte...',
             'openai/toolInvocation/invoked': 'Carte affichée'
+          },
+          annotations: {
+            readOnlyHint: true
           }
-        } : {})
+        } : {
+          annotations: {
+            readOnlyHint: true
+          }
+        })
       },
     ],
   };
@@ -412,8 +466,34 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         const datetime = args.datetime as string | undefined;
         const datetimeRepresents = (args.datetime_represents as string) || 'departure';
         const count = (args.count as number) || 3;
+        const maxNbTransfers = args.max_nb_transfers as number | undefined;
+        const wheelchair = args.wheelchair as boolean | undefined;
+        const timeframeDuration = args.timeframe_duration as number | undefined;
+        const freeRadiusFrom = args.free_radius_from as number | undefined;
+        const freeRadiusTo = args.free_radius_to as number | undefined;
+        const maxDurationToPt = args.max_duration_to_pt as number | undefined;
+        const firstSectionMode = args.first_section_mode as string[] | undefined;
+        const lastSectionMode = args.last_section_mode as string[] | undefined;
+        const travelerType = args.traveler_type as string | undefined;
+        const walkingSpeed = args.walking_speed as number | undefined;
 
-        const journeyResult = await journeysTool.executeWithData(from, to, datetime, datetimeRepresents, count);
+        const journeyResult = await journeysTool.executeWithData(
+          from,
+          to,
+          datetime,
+          datetimeRepresents,
+          count,
+          maxNbTransfers,
+          wheelchair,
+          timeframeDuration,
+          freeRadiusFrom,
+          freeRadiusTo,
+          maxDurationToPt,
+          firstSectionMode,
+          lastSectionMode,
+          travelerType,
+          walkingSpeed
+        );
 
         if (journeyResult.error) {
           return {

@@ -36,6 +36,8 @@ export function MapView({ journey, from, to }: MapViewProps) {
       position: [number, number];
       label: string;
       isTransfer?: boolean;
+      isBoarding?: boolean;
+      isAlighting?: boolean;
     }> = [];
 
     journey.sections.forEach((section, idx) => {
@@ -50,14 +52,19 @@ export function MapView({ journey, from, to }: MapViewProps) {
         let label = "";
 
         if (section.type === "public_transport") {
-          color = section.display_informations?.color 
-            ? `#${section.display_informations.color}` 
+          color = section.display_informations?.color
+            ? `#${section.display_informations.color}`
             : "#2563eb";
           label = section.display_informations?.code || section.display_informations?.name || "";
-        } else if (section.type === "transfer" || section.type === "crow_fly") {
-          color = "#f59e0b"; // Orange pour correspondances/marche
-        } else if (section.type === "walking" || section.mode === "walking") {
-          color = "#10b981"; // Vert pour marche
+        } else if (section.type === "transfer") {
+          color = "#f59e0b"; // Orange pour correspondances
+          label = "Correspondance";
+        } else if (section.type === "crow_fly") {
+          color = "#8b5cf6"; // Violet pour crow_fly (à vol d'oiseau)
+          label = section.mode === "walking" ? "Marche (estimée)" : "Trajet direct";
+        } else if (section.type === "street_network" || section.type === "walking" || section.mode === "walking") {
+          color = "#10b981"; // Vert pour marche sur réseau routier
+          label = section.mode === "bike" ? "Vélo" : section.mode === "car" ? "Voiture" : "Marche";
         }
 
         paths.push({
@@ -73,6 +80,29 @@ export function MapView({ journey, from, to }: MapViewProps) {
             position: coords[0],
             label: "Correspondance",
             isTransfer: true
+          });
+        }
+
+        // Ajouter des markers pour les arrêts intermédiaires (sections public_transport)
+        if (section.type === "public_transport" && section.stop_date_times && section.stop_date_times.length > 2) {
+          // Le premier arrêt de la section = montée, le dernier = descente
+          const isFirstSection = idx === 0 || journey.sections[idx - 1]?.type !== "public_transport";
+          const isLastSection = idx === journey.sections.length - 1 || journey.sections[idx + 1]?.type !== "public_transport";
+
+          // Ne pas afficher le premier et le dernier arrêt (déjà affichés comme départ/arrivée)
+          section.stop_date_times?.slice(1, -1).forEach((stop: any, stopIdx: number) => {
+            if (stop.stop_point?.coord) {
+              const isFirstStop = stopIdx === 0; // Premier arrêt intermédiaire (index 1 dans la liste complète)
+              const isLastStop = stopIdx === (section.stop_date_times?.length ?? 0) - 3; // Dernier arrêt intermédiaire
+
+              markers.push({
+                position: [parseFloat(stop.stop_point.coord.lat), parseFloat(stop.stop_point.coord.lon)],
+                label: stop.stop_point.name || "Arrêt",
+                isTransfer: false,
+                isBoarding: isFirstStop && isFirstSection,
+                isAlighting: isLastStop && isLastSection
+              });
+            }
           });
         }
       }
@@ -181,13 +211,13 @@ export function MapView({ journey, from, to }: MapViewProps) {
         
         {/* Tracer les trajets avec GeoJSON */}
         {paths.map((path, idx) => (
-          <Polyline 
+          <Polyline
             key={idx}
-            positions={path.coordinates} 
-            color={path.color} 
-            weight={path.type === "public_transport" ? 4 : 2}
-            opacity={path.type === "public_transport" ? 0.8 : 0.6}
-            dashArray={path.type === "transfer" || path.type === "crow_fly" ? "5, 10" : undefined}
+            positions={path.coordinates}
+            color={path.color}
+            weight={path.type === "public_transport" ? 5 : path.type === "crow_fly" ? 3 : 4}
+            opacity={0.85}
+            dashArray={path.type === "crow_fly" ? "8, 8" : path.type === "transfer" ? "5, 5" : undefined}
           />
         ))}
         
@@ -292,20 +322,26 @@ export function MapView({ journey, from, to }: MapViewProps) {
           <div style={{ display: "flex", flexDirection: "column", gap: "6px", fontSize: "12px" }}>
             {paths.some(p => p.type === "public_transport") && (
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <div style={{ width: "20px", height: "3px", backgroundColor: "#2563eb" }}></div>
+                <div style={{ width: "20px", height: "4px", backgroundColor: "#2563eb" }}></div>
                 <span>Transport en commun</span>
               </div>
             )}
-            {paths.some(p => p.type === "transfer" || p.type === "crow_fly") && (
+            {paths.some(p => p.type === "street_network" || p.type === "walking") && (
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <div style={{ width: "20px", height: "2px", borderTop: "2px dashed #f59e0b" }}></div>
-                <span>Correspondance</span>
+                <div style={{ width: "20px", height: "3px", backgroundColor: "#10b981" }}></div>
+                <span>Marche / Vélo / Voiture</span>
               </div>
             )}
-            {paths.some(p => p.type === "walking" || p.type === "street_network") && (
+            {paths.some(p => p.type === "crow_fly") && (
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                <div style={{ width: "20px", height: "2px", backgroundColor: "#10b981" }}></div>
-                <span>Marche</span>
+                <div style={{ width: "20px", height: "3px", borderTop: "3px dashed #8b5cf6" }}></div>
+                <span>Trajet estimé (à vol d'oiseau)</span>
+              </div>
+            )}
+            {paths.some(p => p.type === "transfer") && (
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <div style={{ width: "20px", height: "3px", borderTop: "3px dashed #f59e0b" }}></div>
+                <span>Correspondance</span>
               </div>
             )}
           </div>
@@ -323,13 +359,13 @@ export function MapView({ journey, from, to }: MapViewProps) {
           
           {/* Tracer les trajets avec GeoJSON */}
           {paths.map((path, idx) => (
-            <Polyline 
+            <Polyline
               key={idx}
-              positions={path.coordinates} 
-              color={path.color} 
-              weight={path.type === "public_transport" ? 5 : 3}
-              opacity={0.8}
-              dashArray={path.type === "transfer" || path.type === "crow_fly" ? "5, 10" : undefined}
+              positions={path.coordinates}
+              color={path.color}
+              weight={path.type === "public_transport" ? 6 : path.type === "crow_fly" ? 4 : 5}
+              opacity={0.9}
+              dashArray={path.type === "crow_fly" ? "10, 10" : path.type === "transfer" ? "8, 8" : undefined}
             >
               {path.label && (
                 <Popup>
@@ -351,12 +387,28 @@ export function MapView({ journey, from, to }: MapViewProps) {
             </Marker>
           )}
           
-          {/* Markers pour les correspondances */}
-          {markers.map((marker, idx) => (
-            <Marker key={idx} position={marker.position}>
-              <Popup><strong>🔄 {marker.label}</strong></Popup>
-            </Marker>
-          ))}
+          {/* Markers pour les correspondances et arrêts */}
+          {markers.map((marker, idx) => {
+            let icon = "⚬";
+            let prefix = "Passage";
+
+            if (marker.isTransfer) {
+              icon = "🔄";
+              prefix = "Correspondance";
+            } else if (marker.isBoarding) {
+              icon = "🔼";
+              prefix = "Montée";
+            } else if (marker.isAlighting) {
+              icon = "🔽";
+              prefix = "Descente";
+            }
+
+            return (
+              <Marker key={idx} position={marker.position}>
+                <Popup><strong>{icon} {prefix} - {marker.label}</strong></Popup>
+              </Marker>
+            );
+          })}
         </MapContainer>
       </div>
     </div>

@@ -110,21 +110,44 @@ export class SncfApiClient {
     dataFreshness: string = 'realtime',
     maxNbTransfers?: number,
     wheelchair?: boolean,
-    timeframeDuration?: number
+    timeframeDuration?: number,
+    freeRadiusFrom?: number,
+    freeRadiusTo?: number,
+    maxDurationToPt?: number,
+    firstSectionMode?: string[],
+    lastSectionMode?: string[],
+    travelerType?: string,
+    walkingSpeed?: number
   ): Promise<JourneysResponse> {
     const url = new URL(`${this.baseUrl}/coverage/sncf/journeys`);
-    
+
     url.searchParams.append('from', from);
     url.searchParams.append('to', to);
     url.searchParams.append('count', count.toString());
     url.searchParams.append('datetime_represents', datetimeRepresents);
     url.searchParams.append('data_freshness', dataFreshness);
+    url.searchParams.append('depth', '3'); // Maximum detail level for complete info (prices, sections, etc.)
     if (datetime) url.searchParams.append('datetime', datetime);
-    
-    // Nouveaux paramètres optionnels
+
+    // Paramètres optionnels existants
     if (maxNbTransfers !== undefined) url.searchParams.append('max_nb_transfers', maxNbTransfers.toString());
     if (wheelchair !== undefined) url.searchParams.append('wheelchair', wheelchair.toString());
     if (timeframeDuration !== undefined) url.searchParams.append('timeframe_duration', timeframeDuration.toString());
+
+    // Nouveaux paramètres GPS
+    if (freeRadiusFrom !== undefined) url.searchParams.append('free_radius_from', freeRadiusFrom.toString());
+    if (freeRadiusTo !== undefined) url.searchParams.append('free_radius_to', freeRadiusTo.toString());
+    if (maxDurationToPt !== undefined) url.searchParams.append('max_duration_to_pt', maxDurationToPt.toString());
+    if (firstSectionMode && firstSectionMode.length > 0) {
+      firstSectionMode.forEach(mode => url.searchParams.append('first_section_mode[]', mode));
+    }
+    if (lastSectionMode && lastSectionMode.length > 0) {
+      lastSectionMode.forEach(mode => url.searchParams.append('last_section_mode[]', mode));
+    }
+
+    // Paramètres de marche
+    if (travelerType) url.searchParams.append('traveler_type', travelerType);
+    if (walkingSpeed !== undefined) url.searchParams.append('walking_speed', walkingSpeed.toString());
 
     const response = await fetch(url.toString(), {
       headers: {

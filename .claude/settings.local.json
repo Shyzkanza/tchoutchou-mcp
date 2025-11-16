@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:developers.openai.com)",
+      "Bash(pkill:*)",
+      "Bash(npm run start:http:*)",
+      "Bash(npm install:*)",
+      "Bash(curl:*)",
+      "Bash(npm run build:*)",
+      "WebFetch(domain:doc.navitia.io)",
+      "Bash(python3:*)",
+      "Bash(cat:*)",
+      "Bash(git reset:*)",
+      "Bash(PORT=3000 npm run start:http:*)",
+      "Bash(PORT=3000 node:*)",
+      "Bash(/tmp/ngrok_tools.json)",
+      "Bash(time curl -X POST https://tacit-haley-ranunculaceous.ngrok-free.dev/mcp -H \"Content-Type: application/json\" -d '{\"\"\"\"jsonrpc\"\"\"\":\"\"\"\"2.0\"\"\"\",\"\"\"\"id\"\"\"\":1,\"\"\"\"method\"\"\"\":\"\"\"\"tools/call\"\"\"\",\"\"\"\"params\"\"\"\":{\"\"\"\"name\"\"\"\":\"\"\"\"get_journeys\"\"\"\",\"\"\"\"arguments\"\"\"\":{\"\"\"\"from\"\"\"\":\"\"\"\"stop_area:SNCF:87686006\"\"\"\",\"\"\"\"to\"\"\"\":\"\"\"\"stop_area:SNCF:87722025\"\"\"\",\"\"\"\"count\"\"\"\":1}}}')"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

@@ -4,6 +4,24 @@ import { formatDateTime, formatDuration, formatTime } from "./utils";
 import { MapView } from "./MapView";
 import type { Journey, Section, WidgetState } from "./types";
 
+// Style constants to reduce repetition
+const styles = {
+  container: { fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif", padding: "20px", maxWidth: "100%", background: "var(--bg-primary, #ffffff)", color: "var(--text-primary, #1a1a1a)", minHeight: "100vh" },
+  header: { marginBottom: "24px", paddingBottom: "20px", borderBottom: "2px solid var(--border-color, #e5e7eb)" },
+  title: { margin: "0 0 12px 0", fontSize: "28px", fontWeight: "700", color: "var(--text-primary, #1a1a1a)", letterSpacing: "-0.5px" } as React.CSSProperties,
+  subtitle: { margin: 0, color: "var(--text-secondary, #6b7280)", fontSize: "15px", fontWeight: "500" } as React.CSSProperties,
+  tabsContainer: { display: "flex", gap: "12px", marginBottom: "24px", overflowX: "auto", paddingBottom: "8px" } as React.CSSProperties,
+  tab: (selected: boolean) => ({ padding: "14px 20px", border: "2px solid", borderColor: selected ? "var(--accent-primary, #2563eb)" : "var(--border-color, #e5e7eb)", borderRadius: "12px", backgroundColor: selected ? "var(--accent-bg, #eff6ff)" : "var(--bg-secondary, #f9fafb)", color: selected ? "var(--accent-primary, #2563eb)" : "var(--text-primary, #1a1a1a)", cursor: "pointer", fontSize: "15px", fontWeight: selected ? "700" : "500", transition: "all 0.2s ease", boxShadow: selected ? "0 2px 8px rgba(37, 99, 235, 0.15)" : "none", display: "flex", flexDirection: "column", alignItems: "flex-start", gap: "6px", minWidth: "fit-content" } as React.CSSProperties),
+  card: { background: "linear-gradient(135deg, var(--bg-secondary, #f9fafb) 0%, var(--bg-tertiary, #f3f4f6) 100%)", padding: "24px", borderRadius: "16px", border: "1px solid var(--border-color, #e5e7eb)", boxShadow: "0 2px 8px rgba(0, 0, 0, 0.04)" },
+  grid2: { display: "grid", gridTemplateColumns: "1fr 1fr", gap: "20px", marginBottom: "24px" } as React.CSSProperties,
+  badge: { fontSize: "14px", color: "var(--success-text, #059669)", fontWeight: "700", backgroundColor: "var(--success-bg, #d1fae5)", padding: "4px 10px", borderRadius: "6px" } as React.CSSProperties,
+  sectionCard: { background: "var(--bg-secondary, #ffffff)", padding: "20px", borderRadius: "12px", marginBottom: "16px", border: "1px solid var(--border-color, #e5e7eb)", boxShadow: "0 1px 4px rgba(0, 0, 0, 0.05)", transition: "all 0.2s ease" },
+  sectionHeader: { display: "flex", alignItems: "center", gap: "12px", marginBottom: "12px" } as React.CSSProperties,
+  iconCircle: (color: string) => ({ width: "48px", height: "48px", borderRadius: "50%", display: "flex", alignItems: "center", justifyContent: "center", fontSize: "24px", background: `linear-gradient(135deg, ${color}15 0%, ${color}25 100%)`, border: `2px solid ${color}` }),
+  flexBetween: { display: "flex", justifyContent: "space-between", alignItems: "center" } as React.CSSProperties,
+  flexCenter: { display: "flex", alignItems: "center", gap: "8px" } as React.CSSProperties,
+};
+
 export function JourneyViewer() {
   const toolOutputHook = useToolOutput();
   const [widgetState, setWidgetState] = useWidgetState<WidgetState>({ selectedJourneyIndex: 0 });
@@ -66,81 +84,7 @@ export function JourneyViewer() {
   }
 
   if (!parsedOutput || !parsedOutput.journeys || parsedOutput.journeys.length === 0) {
-    return (
-      <div style={{ 
-        padding: "20px", 
-        textAlign: "center", 
-        color: "var(--text-primary)",
-        fontFamily: "monospace",
-        fontSize: "12px"
-      }}>
-        <p style={{ marginBottom: "20px", fontSize: "16px", fontWeight: "bold" }}>
-          Aucun itinéraire disponible
-        </p>
-        
-        <div style={{
-          background: "#f3f4f6",
-          padding: "20px",
-          borderRadius: "8px",
-          textAlign: "left",
-          maxWidth: "800px",
-          margin: "0 auto"
-        }}>
-          <h3 style={{ marginBottom: "10px" }}>Debug Info:</h3>
-          <div style={{ marginBottom: "10px" }}>
-            <strong>toolOutput (raw) type:</strong> {typeof toolOutput} {toolOutput === null ? "(null)" : ""} {toolOutput === undefined ? "(undefined)" : ""}
-          </div>
-          <div style={{ marginBottom: "10px" }}>
-            <strong>toolOutput (raw) value:</strong> {toolOutput === null ? "null" : toolOutput === undefined ? "undefined" : typeof toolOutput === 'string' ? `"${toolOutput.substring(0, 100)}..."` : JSON.stringify(toolOutput).substring(0, 200)}
-          </div>
-          <div style={{ marginBottom: "10px" }}>
-            <strong>parsedOutput type:</strong> {typeof parsedOutput} {parsedOutput === null ? "(null)" : ""} {parsedOutput === undefined ? "(undefined)" : ""}
-          </div>
-          <div style={{ marginBottom: "10px" }}>
-            <strong>parsedOutput keys:</strong> {parsedOutput && parsedOutput !== null ? Object.keys(parsedOutput).join(", ") : "null/undefined"}
-          </div>
-          {parsedOutput && parsedOutput !== null && (
-            <>
-              <div style={{ marginBottom: "10px" }}>
-                <strong>parsedOutput.departures:</strong> {parsedOutput.departures ? `${Array.isArray(parsedOutput.departures) ? parsedOutput.departures.length + " items" : typeof parsedOutput.departures}` : "undefined"}
-              </div>
-              <div style={{ marginBottom: "10px" }}>
-                <strong>parsedOutput.arrivals:</strong> {parsedOutput.arrivals ? `${Array.isArray(parsedOutput.arrivals) ? parsedOutput.arrivals.length + " items" : typeof parsedOutput.arrivals}` : "undefined"}
-              </div>
-              <div style={{ marginBottom: "10px" }}>
-                <strong>parsedOutput.journeys:</strong> {parsedOutput.journeys ? `${Array.isArray(parsedOutput.journeys) ? parsedOutput.journeys.length + " items" : typeof parsedOutput.journeys}` : "undefined"}
-              </div>
-              <div style={{ marginBottom: "10px", marginTop: "20px" }}>
-                <strong>Full parsedOutput:</strong>
-                <pre style={{ 
-                  background: "#ffffff", 
-                  padding: "10px", 
-                  borderRadius: "4px", 
-                  overflow: "auto",
-                  maxHeight: "400px",
-                  fontSize: "10px"
-                }}>
-                  {JSON.stringify(parsedOutput, null, 2)}
-                </pre>
-              </div>
-            </>
-          )}
-          <div style={{ marginBottom: "10px", marginTop: "20px" }}>
-            <strong>window.openai.toolOutput:</strong>
-            <pre style={{ 
-              background: "#ffffff", 
-              padding: "10px", 
-              borderRadius: "4px", 
-              overflow: "auto",
-              maxHeight: "200px",
-              fontSize: "10px"
-            }}>
-              {typeof window !== 'undefined' && window.openai ? JSON.stringify(window.openai.toolOutput, null, 2) : "window.openai not available"}
-            </pre>
-          </div>
-        </div>
-      </div>
-    );
+    return <div style={{padding:"20px",textAlign:"center"}}>Aucun itinéraire disponible</div>;
   }
 
   const journeys = parsedOutput.journeys;
@@ -165,70 +109,20 @@ export function JourneyViewer() {
   const destinationName = getStationName(selectedJourney, 'to');
 
   return (
-    <div style={{ 
-      fontFamily: "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif",
-      padding: "20px",
-      maxWidth: "100%",
-      background: "var(--bg-primary, #ffffff)",
-      color: "var(--text-primary, #1a1a1a)",
-      minHeight: "100vh"
-    }}>
-      {/* En-tête avec origine/destination */}
-      <div style={{ 
-        marginBottom: "24px",
-        paddingBottom: "20px",
-        borderBottom: "2px solid var(--border-color, #e5e7eb)"
-      }}>
-        <h2 style={{ 
-          margin: "0 0 12px 0", 
-          fontSize: "28px", 
-          fontWeight: "700",
-          color: "var(--text-primary, #1a1a1a)",
-          letterSpacing: "-0.5px"
-        }}>
-          🚂 {originName} → {destinationName}
-        </h2>
-        <p style={{ 
-          margin: 0, 
-          color: "var(--text-secondary, #6b7280)", 
-          fontSize: "15px",
-          fontWeight: "500"
-        }}>
-          {journeys.length} itinéraire{journeys.length > 1 ? "s" : ""} trouvé{journeys.length > 1 ? "s" : ""}
-        </p>
+    <div style={styles.container}>
+      <div style={styles.header}>
+        <h2 style={styles.title}>🚂 {originName} → {destinationName}</h2>
+        <p style={styles.subtitle}>{journeys.length} itinéraire{journeys.length > 1 ? "s" : ""} trouvé{journeys.length > 1 ? "s" : ""}</p>
       </div>
 
       {/* Sélecteur d'itinéraires (onglets) */}
       {journeys.length > 1 && (
-        <div style={{ 
-          display: "flex",
-          gap: "12px",
-          marginBottom: "24px",
-          overflowX: "auto",
-          paddingBottom: "8px"
-        }}>
+        <div style={styles.tabsContainer}>
           {journeys.map((journey: Journey, index: number) => (
             <button
               key={index}
               onClick={() => setWidgetState({ ...widgetState, selectedJourneyIndex: index })}
-              style={{
-                padding: "14px 20px",
-                border: "2px solid",
-                borderColor: selectedIndex === index ? "var(--accent-primary, #2563eb)" : "var(--border-color, #e5e7eb)",
-                borderRadius: "12px",
-                backgroundColor: selectedIndex === index ? "var(--accent-bg, #eff6ff)" : "var(--bg-secondary, #f9fafb)",
-                color: selectedIndex === index ? "var(--accent-primary, #2563eb)" : "var(--text-primary, #1a1a1a)",
-                cursor: "pointer",
-                fontSize: "15px",
-                fontWeight: selectedIndex === index ? "700" : "500",
-                transition: "all 0.2s ease",
-                boxShadow: selectedIndex === index ? "0 2px 8px rgba(37, 99, 235, 0.15)" : "none",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "flex-start",
-                gap: "6px",
-                minWidth: "fit-content"
-              }}
+              style={styles.tab(selectedIndex === index)}
             >
               <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
                 <span>Option {index + 1}</span>
@@ -241,9 +135,9 @@ export function JourneyViewer() {
                 </span>
               </div>
               
-              {journey.fare?.total?.value && (
-                <span style={{ 
-                  fontSize: "14px", 
+              {journey.fare?.found && journey.fare?.total?.value && parseFloat(journey.fare.total.value) > 0 && (
+                <span style={{
+                  fontSize: "14px",
                   color: "var(--success-text, #059669)",
                   fontWeight: "700",
                   backgroundColor: selectedIndex === index ? "var(--success-bg, #d1fae5)" : "var(--success-bg, #d1fae5)",
@@ -411,8 +305,8 @@ function JourneyDetails({ journey, from, to }: { journey: Journey; from?: string
                 </div>
               )}
               
-              {journey.fare?.total?.value && (
-                <div style={{ 
+              {journey.fare?.found && journey.fare?.total?.value && parseFloat(journey.fare.total.value) > 0 && (
+                <div style={{
                   backgroundColor: "var(--success-bg, #d1fae5)",
                   color: "var(--success-text, #059669)",
                   padding: "8px 14px",

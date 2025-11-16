@@ -4,14 +4,12 @@ import { MapContainer, TileLayer, Marker, Popup, Polyline, useMap } from "react-
 import L from "leaflet";
 
 // Fix pour les icônes Leaflet
-if (typeof window !== 'undefined') {
-  delete (L.Icon.Default.prototype as any)._getIconUrl;
-  L.Icon.Default.mergeOptions({
-    iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
-    iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
-    shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
-  });
-}
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+  iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
+  shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
+});
 
 // Helper functions pour la carte
 function getRouteGeoJSON(departure: any) {
@@ -74,8 +72,10 @@ function MapContent({ center, zoom, geoJSON, departureCoord, destinationCoord, r
   return (
     <>
       <TileLayer
-        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        maxZoom={19}
+        subdomains={['a', 'b', 'c']}
       />
       
       {/* Trajet */}
@@ -118,10 +118,24 @@ function MapContent({ center, zoom, geoJSON, departureCoord, destinationCoord, r
 
 // Composant pour la modal de carte - Version simplifiée comme JourneyViewer
 function MapModal({ departure, stationName, onClose, mapKey }: any) {
-  // Centre de la France par défaut
-  const center: [number, number] = [46.2276, 2.2137];
-  const zoom = 10;
-  
+  const routeGeoJSON = getRouteGeoJSON(departure);
+  const routeColor = getRouteColor(departure);
+
+  const departureCoord = departure.stop_point?.coord;
+  const destinationCoord = departure.route?.direction?.stop_area?.coord;
+
+  // Calculer le centre de la carte
+  let center: [number, number] = [46.2276, 2.2137]; // France par défaut
+  let zoom = 10;
+
+  if (departureCoord) {
+    center = [parseFloat(departureCoord.lat), parseFloat(departureCoord.lon)];
+    zoom = 12;
+  }
+
+  const fromName = stationName;
+  const toName = departure.route?.direction?.stop_area?.name || departure.route?.direction?.name || 'Destination';
+
   return (
     <div
       style={{
@@ -173,7 +187,7 @@ function MapModal({ departure, stationName, onClose, mapKey }: any) {
         >
           ✕
         </button>
-        
+
         {typeof window !== 'undefined' && (
           <MapContainer
             key={`map-${mapKey}-${departure.stop_date_time?.departure_date_time || 'default'}`}
@@ -181,9 +195,15 @@ function MapModal({ departure, stationName, onClose, mapKey }: any) {
             zoom={zoom}
             style={{ height: "100%", width: "100%", minHeight: "400px" }}
           >
-            <TileLayer
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+            <MapContent
+              center={center}
+              zoom={zoom}
+              geoJSON={routeGeoJSON}
+              departureCoord={departureCoord}
+              destinationCoord={destinationCoord}
+              routeColor={routeColor}
+              fromName={fromName}
+              toName={toName}
             />
           </MapContainer>
         )}
@@ -199,7 +219,7 @@ export function DeparturesViewer() {
   const [showMap, setShowMap] = useState(false);
   const [showStops, setShowStops] = useState(false);
   const [mapKey, setMapKey] = useState(0);
-  
+
   // Forcer le re-render de la carte quand la modal s'ouvre
   useEffect(() => {
     if (showMap && selectedDeparture) {
