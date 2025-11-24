@@ -8,7 +8,7 @@ A ChatGPT application that allows you to search for trains in France with an **i
 [![Website Status](https://img.shields.io/website?url=https%3A%2F%2Ftchoutchou-mcp.rankorr.red%2Fhealth&label=API)](https://tchoutchou-mcp.rankorr.red/health)
 ![Node](https://img.shields.io/badge/node-18%2B-green)
 ![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue)
-![MCP](https://img.shields.io/badge/MCP-2024--11--05-orange)
+![MCP](https://img.shields.io/badge/MCP-2025--06--18-orange)
 ![ChatGPT](https://img.shields.io/badge/ChatGPT-Apps%20SDK-purple)
 
 ---
