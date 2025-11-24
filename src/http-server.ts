@@ -768,7 +768,7 @@ const httpServer = http.createServer(async (req, res) => {
         switch (jsonRpcRequest.method) {
           case 'initialize': {
             result = {
-              protocolVersion: '2024-11-05',
+              protocolVersion: '2025-06-18',
               capabilities: {
                 tools: {},
                 resources: {}
