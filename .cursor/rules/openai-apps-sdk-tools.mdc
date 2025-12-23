@@ -1,0 +1,203 @@
+---
+description: Convention pour la création et configuration des tools MCP pour ChatGPT Apps SDK
+globs: 
+  - src/tools/**/*.ts
+alwaysApply: false
+---
+
+# OpenAI Apps SDK - Convention Tools MCP
+
+## Structure d'un Tool
+
+Chaque tool doit suivre cette structure :
+
+```typescript
+{
+  name: 'domain.action',           // Format domain.action (ex: sncf.search_stations)
+  title: 'Titre Lisible',          // Visible par l'utilisateur
+  description: 'Use this when...', // TOUJOURS commencer par "Use this when..."
+  inputSchema: {
+    type: 'object',
+    properties: { /* ... */ },
+    required: ['param1']
+  },
+  annotations: {
+    readOnlyHint: true,            // OBLIGATOIRE pour lecture seule
+    destructiveHint: false,        // true si suppression/écrasement
+    openWorldHint: false           // true si publication publique
+  },
+  _meta: {
+    'openai/outputTemplate': 'template://widget-name',
+    'openai/widgetAccessible': true,
+    'openai/visibility': 'public'
+  }
+}
+```
+
+## Règles de Nommage
+
+### Nom du Tool
+- ✅ Format `domain.action` : `sncf.search_stations`, `sncf.get_departures`
+- ❌ Éviter les noms génériques : `getData`, `process`
+
+### Description
+- ✅ TOUJOURS commencer par **"Use this when the user wants to..."**
+- ✅ Ajouter **"Do NOT use for..."** pour éviter les mauvais usages
+- ✅ Être explicite sur les paramètres requis
+
+```typescript
+// ✅ BON
+description: 'Use this when the user wants to search for train stations in France. ' +
+             'Requires station name or city. ' +
+             'Do NOT use for international stations or bus stops.'
+
+// ❌ MAUVAIS
+description: 'Searches stations'
+```
+
+## Annotations Obligatoires
+
+### readOnlyHint
+```typescript
+// Outil qui ne modifie rien (lecture seule)
+annotations: {
+  readOnlyHint: true,    // ✅ ChatGPT skip les confirmations
+  destructiveHint: false,
+  openWorldHint: false
+}
+```
+
+### destructiveHint
+```typescript
+// Outil qui supprime ou écrase des données
+annotations: {
+  readOnlyHint: false,
+  destructiveHint: true,  // ✅ Confirmation explicite requise
+  openWorldHint: false
+}
+```
+
+### openWorldHint
+```typescript
+// Outil qui publie du contenu publiquement
+annotations: {
+  readOnlyHint: false,
+  destructiveHint: false,
+  openWorldHint: true     // ✅ Publication hors compte user
+}
+```
+
+## InputSchema Best Practices
+
+```typescript
+inputSchema: {
+  type: 'object',
+  properties: {
+    query: {
+      type: 'string',
+      description: 'Station name or city (e.g., "Paris Gare de Lyon" or "Marseille")'
+    },
+    count: {
+      type: 'number',
+      minimum: 1,
+      maximum: 20,
+      description: 'Number of results to return (1-20)'
+    },
+    direction: {
+      type: 'string',
+      enum: ['departures', 'arrivals'],
+      description: 'Direction: departures or arrivals'
+    }
+  },
+  required: ['query']
+}
+```
+
+## Structure de Fichier Tool
+
+Chaque tool doit être dans `src/tools/` avec cette structure :
+
+```typescript
+/**
+ * Tool: sncf.search_stations
+ * Description: Recherche les gares SNCF
+ */
+
+import { MCPError, InvalidInputError } from '../utils/errors.js';
+
+// Types pour ce tool
+interface SearchStationsInput {
+  query: string;
+  count?: number;
+}
+
+interface SearchStationsResult {
+  // ... définir le type de retour
+}
+
+// Définition du tool
+export const searchStationsTool = {
+  name: 'sncf.search_stations',
+  title: 'Search Train Stations',
+  description: 'Use this when the user wants to search for train stations in France. ' +
+               'Requires station name or city. ' +
+               'Do NOT use for international stations or bus stops.',
+  inputSchema: {
+    type: 'object',
+    properties: {
+      query: {
+        type: 'string',
+        description: 'Station name or city'
+      },
+      count: {
+        type: 'number',
+        minimum: 1,
+        maximum: 20,
+        description: 'Number of results (1-20)'
+      }
+    },
+    required: ['query']
+  },
+  annotations: {
+    readOnlyHint: true,
+    destructiveHint: false,
+    openWorldHint: false
+  },
+  _meta: {
+    'openai/outputTemplate': 'template://stations-list',
+    'openai/widgetAccessible': true,
+    'openai/visibility': 'public'
+  }
+};
+
+// Handler du tool
+export async function handleSearchStations(
+  params: SearchStationsInput
+): Promise<SearchStationsResult> {
+  // Validation des entrées
+  if (!params.query?.trim()) {
+    throw new InvalidInputError('Query is required');
+  }
+
+  // Logique métier...
+  
+  return {
+    // ...résultat
+  };
+}
+```
+
+## Checklist Tool
+
+Avant de commit un nouveau tool :
+
+- [ ] Nom au format `domain.action`
+- [ ] Description commence par "Use this when..."
+- [ ] Description inclut "Do NOT use for..." si pertinent
+- [ ] `inputSchema` avec descriptions claires
+- [ ] Enums pour valeurs contraintes
+- [ ] `annotations` configurées correctement
+- [ ] `_meta` avec template si widget
+- [ ] Validation des entrées server-side
+- [ ] Types TypeScript définis
+- [ ] Gestion d'erreurs avec classes du projet

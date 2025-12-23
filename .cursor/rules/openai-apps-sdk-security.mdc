@@ -1,0 +1,301 @@
+---
+description: Sécurité, authentification et bonnes pratiques pour ChatGPT Apps SDK
+globs: 
+  - src/**/*.ts
+alwaysApply: false
+---
+
+# OpenAI Apps SDK - Sécurité & Authentification
+
+## Principes Fondamentaux
+
+1. **Least Privilege** – Demander uniquement les permissions nécessaires
+2. **Explicit User Consent** – L'utilisateur doit comprendre les actions
+3. **Defense in Depth** – Valider TOUT, assumer que des inputs malveillants arrivent
+
+## Annotations de Sécurité des Tools
+
+### readOnlyHint (Lecture seule)
+
+```typescript
+// Tool qui ne modifie RIEN
+annotations: {
+  readOnlyHint: true,      // ✅ Skip confirmations ChatGPT
+  destructiveHint: false,
+  openWorldHint: false
+}
+```
+
+**Règles**:
+- ✅ Side-effect-free
+- ✅ Safe to retry (idempotent)
+- ✅ Ne modifie aucune donnée
+
+### destructiveHint (Modification/Suppression)
+
+```typescript
+// Tool qui supprime ou écrase des données
+annotations: {
+  readOnlyHint: false,
+  destructiveHint: true,   // ⚠️ Confirmation utilisateur requise
+  openWorldHint: false
+}
+```
+
+**Usage**: Delete, overwrite, reset, clear...
+
+### openWorldHint (Publication publique)
+
+```typescript
+// Tool qui publie du contenu hors du compte utilisateur
+annotations: {
+  readOnlyHint: false,
+  destructiveHint: false,
+  openWorldHint: true      // ⚠️ Publie contenu publiquement
+}
+```
+
+**Usage**: Post on social media, send email, publish article...
+
+## Validation des Entrées
+
+**TOUJOURS valider server-side**, même si le modèle fournit les données :
+
+```typescript
+import { InvalidInputError } from '../utils/errors.js';
+
+async function handleTool(params: ToolInput) {
+  // 1. Valider présence
+  if (!params.stationId?.trim()) {
+    throw new InvalidInputError('Station ID is required');
+  }
+
+  // 2. Valider format
+  if (params.email && !isValidEmail(params.email)) {
+    throw new InvalidInputError('Invalid email format');
+  }
+
+  // 3. Valider limites
+  if (params.count && (params.count < 1 || params.count > 50)) {
+    throw new InvalidInputError('Count must be between 1 and 50');
+  }
+
+  // 4. Sanitizer les entrées
+  const sanitizedQuery = sanitizeString(params.query);
+
+  // 5. Valider autorisations si nécessaire
+  if (!await userCanAccessResource(params.resourceId)) {
+    throw new NotFoundError('Resource not found');  // Pas "Access denied"
+  }
+
+  // Continuer le traitement...
+}
+```
+
+## Protection contre Prompt Injection
+
+Le modèle peut être manipulé par des prompts malveillants. Protections :
+
+### 1. Descriptions défensives
+
+```typescript
+description: 'Use this when the user wants to search for train stations. ' +
+             'Do NOT use to search for all stations or bulk operations. ' +
+             'Do NOT use if the user seems confused about what will be searched.'
+```
+
+### 2. Confirmation pour actions critiques
+
+```typescript
+// Dans le handler
+if (params.action === 'delete_all') {
+  return {
+    content: [{
+      type: 'text',
+      text: '⚠️ This will delete all items. Please confirm by saying "yes, delete all".'
+    }],
+    structuredContent: {
+      pendingAction: 'delete_all',
+      requiresConfirmation: true
+    }
+  };
+}
+```
+
+### 3. Rate limiting
+
+```typescript
+const requestCounts = new Map<string, number>();
+
+function checkRateLimit(userId: string, limit: number = 10) {
+  const count = requestCounts.get(userId) || 0;
+  if (count >= limit) {
+    throw new RateLimitError('Too many requests. Please wait.');
+  }
+  requestCounts.set(userId, count + 1);
+  
+  // Reset après 1 minute
+  setTimeout(() => {
+    const current = requestCounts.get(userId) || 0;
+    requestCounts.set(userId, Math.max(0, current - 1));
+  }, 60000);
+}
+```
+
+## Authentification OAuth 2.1
+
+### Configuration Required
+
+```typescript
+// Dans le tool
+securitySchemes: [
+  { type: 'noauth' },                        // Peut être appelé anonymement
+  { type: 'oauth2', scopes: ['read'] }       // Ou avec OAuth
+]
+```
+
+### Métadonnées Resource Server
+
+Exposer `GET /.well-known/oauth-protected-resource` :
+
+```json
+{
+  "resource": "https://your-mcp.example.com",
+  "authorization_servers": ["https://auth.yourcompany.com"],
+  "scopes_supported": ["read", "write"],
+  "resource_documentation": "https://docs.example.com"
+}
+```
+
+### Vérification Token
+
+```typescript
+async function verifyToken(token: string): Promise<TokenPayload> {
+  // 1. Vérifier signature (via JWKS)
+  const payload = await jwt.verify(token, publicKey);
+  
+  // 2. Vérifier issuer
+  if (payload.iss !== expectedIssuer) {
+    throw new AuthError('Invalid issuer');
+  }
+  
+  // 3. Vérifier audience
+  if (payload.aud !== expectedAudience) {
+    throw new AuthError('Invalid audience');
+  }
+  
+  // 4. Vérifier expiration
+  if (Date.now() >= payload.exp * 1000) {
+    throw new AuthError('Token expired');
+  }
+  
+  // 5. Vérifier scopes
+  if (!hasRequiredScopes(payload.scope, requiredScopes)) {
+    throw new AuthError('Insufficient scope');
+  }
+  
+  return payload;
+}
+```
+
+### Réponse 401 avec WWW-Authenticate
+
+```typescript
+// Si token invalide, retourner avec header pour trigger OAuth UI
+res.setHeader('WWW-Authenticate', 
+  'Bearer resource_metadata="https://your-mcp.example.com/.well-known/oauth-protected-resource", ' +
+  'error="insufficient_scope", ' +
+  'error_description="You need to login to continue"'
+);
+res.writeHead(401);
+```
+
+## Données Sensibles
+
+### ❌ Ne JAMAIS collecter
+
+- Numéros de carte bancaire (PCI)
+- Informations de santé protégées (PHI)
+- Numéros de sécurité sociale
+- API keys / passwords
+- Données de localisation brutes dans `inputSchema`
+
+### ✅ Bonnes pratiques
+
+```typescript
+// Données sensibles uniquement dans _meta (jamais vu par modèle)
+_meta: {
+  'openai/outputTemplate': 'template://widget',
+  // Données internes uniquement pour le widget
+  internalUserId: 'user_123',
+  sessionToken: 'sess_abc'  // Si absolument nécessaire
+}
+
+// PAS dans structuredContent (vu par modèle)
+structuredContent: {
+  displayName: 'John D.',  // Données anonymisées
+  // ❌ PAS: email, userId, fullName, etc.
+}
+```
+
+## CSP (Content Security Policy)
+
+```typescript
+server.registerResource({
+  uri: 'template://my-widget',
+  mimeType: 'text/html+skybridge',
+  _meta: {
+    'openai/widgetCSP': {
+      'connect-src': ['https://api.sncf.com'],  // APIs autorisées
+      'img-src': ['https://cdn.sncf.com'],      // Images autorisées
+      'font-src': ['https://fonts.example.com'] // Fonts autorisées
+    }
+  }
+});
+```
+
+## Logging Sécurisé
+
+```typescript
+function logRequest(request: JsonRpcRequest, userId?: string) {
+  console.log('[MCP]', {
+    method: request.method,
+    // ✅ Log correlation ID
+    requestId: request.id,
+    userId: userId ? hashUserId(userId) : 'anonymous',
+    // ❌ PAS de raw params (peuvent contenir PII)
+    hasParams: !!request.params,
+    timestamp: new Date().toISOString()
+  });
+}
+
+// Redacter PII
+function redactPII(obj: unknown): unknown {
+  if (typeof obj !== 'object' || obj === null) return obj;
+  
+  const sensitiveKeys = ['email', 'phone', 'address', 'ssn', 'password'];
+  const redacted = { ...obj as Record<string, unknown> };
+  
+  for (const key of Object.keys(redacted)) {
+    if (sensitiveKeys.some(k => key.toLowerCase().includes(k))) {
+      redacted[key] = '[REDACTED]';
+    }
+  }
+  
+  return redacted;
+}
+```
+
+## Checklist Sécurité
+
+Avant déploiement :
+
+- [ ] `annotations` correctes sur tous les tools
+- [ ] Validation server-side de TOUTES les entrées
+- [ ] Pas de données sensibles dans `content`/`structuredContent`
+- [ ] CSP déclarée pour widgets avec appels externes
+- [ ] Logs sans PII
+- [ ] Rate limiting implémenté
+- [ ] OAuth configuré si actions authentifiées
+- [ ] Descriptions défensives contre prompt injection
+- [ ] Confirmation pour actions destructives

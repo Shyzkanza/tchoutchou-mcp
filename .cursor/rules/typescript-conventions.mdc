@@ -1,0 +1,336 @@
+---
+description: Conventions TypeScript pour le projet SNCF MCP
+globs: 
+  - src/**/*.ts
+alwaysApply: false
+---
+
+# Conventions TypeScript - SNCF MCP
+
+## Configuration TypeScript
+
+Le projet utilise ES2022 avec ESM modules. Configuration dans `tsconfig.json` :
+
+```json
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ES2022",
+    "moduleResolution": "node",
+    "strict": true,
+    "esModuleInterop": true
+  }
+}
+```
+
+## Imports ESM
+
+### Extension `.js` obligatoire
+
+```typescript
+// ✅ BON - Extension .js pour les imports locaux
+import { getServerConfig } from './config.js';
+import { InvalidInputError } from '../utils/errors.js';
+import type { ServerConfig } from './types.js';
+
+// ❌ MAUVAIS - Extension manquante
+import { getServerConfig } from './config';
+```
+
+### Import type pour les types uniquement
+
+```typescript
+// ✅ BON - import type pour types purs
+import type { ServerConfig, MCPError } from './types.js';
+import type { Station, Departure } from './types.js';
+
+// Combine si nécessaire
+import { ErrorCode, type MCPError } from './types.js';
+```
+
+## Types et Interfaces
+
+### Interfaces pour les objets
+
+```typescript
+// ✅ BON - Interface pour structure d'objet
+export interface ServerConfig {
+  port: number;
+  nodeEnv: string;
+  corsOrigin?: string;
+}
+
+export interface Station {
+  id: string;
+  name: string;
+  city: string;
+  coordinates?: { lat: number; lon: number };
+}
+```
+
+### Types pour unions/aliases
+
+```typescript
+// ✅ BON - Type pour union
+export type DisplayMode = 'inline' | 'carousel' | 'fullscreen' | 'pip';
+
+// ✅ BON - Type pour alias complexe
+export type ToolHandler<TInput, TOutput> = (params: TInput) => Promise<TOutput>;
+```
+
+### Enums pour valeurs finies
+
+```typescript
+// ✅ BON - Enum pour codes d'erreur
+export enum ErrorCode {
+  INVALID_INPUT = 'INVALID_INPUT',
+  API_ERROR = 'API_ERROR',
+  NETWORK_ERROR = 'NETWORK_ERROR',
+  NOT_FOUND = 'NOT_FOUND',
+  RATE_LIMIT = 'RATE_LIMIT',
+  INTERNAL_ERROR = 'INTERNAL_ERROR',
+}
+```
+
+## Gestion des Erreurs
+
+### Utiliser les classes d'erreur du projet
+
+```typescript
+import { 
+  InvalidInputError, 
+  APIError, 
+  NetworkError,
+  NotFoundError,
+  RateLimitError 
+} from '../utils/errors.js';
+
+// Validation d'entrée
+if (!params.query?.trim()) {
+  throw new InvalidInputError('Query is required');
+}
+
+// Erreur API
+if (response.status === 404) {
+  throw new NotFoundError('Station not found');
+}
+
+if (response.status === 429) {
+  throw new RateLimitError('API rate limit exceeded');
+}
+
+if (response.status >= 400) {
+  throw new APIError(`API error: ${response.status}`, { 
+    status: response.status,
+    body: await response.text()
+  });
+}
+```
+
+### Try-catch structuré
+
+```typescript
+async function handleTool(params: ToolInput): Promise<ToolOutput> {
+  try {
+    // Logique métier
+    const result = await fetchData(params);
+    return formatResult(result);
+  } catch (error) {
+    // Re-throw les erreurs connues
+    if (error instanceof MCPError) {
+      throw error;
+    }
+    
+    // Wrapper les erreurs inconnues
+    if (error instanceof Error) {
+      throw new APIError(`Unexpected error: ${error.message}`);
+    }
+    
+    throw new APIError('Unknown error occurred');
+  }
+}
+```
+
+## Async/Await
+
+### Toujours async pour les handlers
+
+```typescript
+// ✅ BON - Handler async
+export async function handleSearchStations(
+  params: SearchStationsInput
+): Promise<SearchStationsResult> {
+  const data = await sncfClient.searchStations(params.query);
+  return formatStations(data);
+}
+
+// ❌ MAUVAIS - Callback style
+export function handleSearchStations(
+  params: SearchStationsInput,
+  callback: (err: Error | null, result?: SearchStationsResult) => void
+) { ... }
+```
+
+### Promise.all pour appels parallèles
+
+```typescript
+// ✅ BON - Parallélisation
+const [departures, arrivals] = await Promise.all([
+  fetchDepartures(stationId),
+  fetchArrivals(stationId)
+]);
+
+// ❌ MAUVAIS - Séquentiel non nécessaire
+const departures = await fetchDepartures(stationId);
+const arrivals = await fetchArrivals(stationId);
+```
+
+## Typage Strict
+
+### Éviter `any`
+
+```typescript
+// ✅ BON - Type explicite
+function parseResponse(data: unknown): Station[] {
+  if (!isValidStationArray(data)) {
+    throw new InvalidInputError('Invalid response format');
+  }
+  return data;
+}
+
+// Type guard
+function isValidStationArray(data: unknown): data is Station[] {
+  return (
+    Array.isArray(data) &&
+    data.every(item => 
+      typeof item === 'object' &&
+      item !== null &&
+      'id' in item &&
+      'name' in item
+    )
+  );
+}
+
+// ❌ MAUVAIS - any
+function parseResponse(data: any): Station[] {
+  return data;
+}
+```
+
+### Utiliser `unknown` pour données externes
+
+```typescript
+// ✅ BON - unknown pour API responses
+async function fetchAPI(): Promise<unknown> {
+  const response = await fetch(url);
+  return response.json();
+}
+
+// Puis valider
+const data = await fetchAPI();
+const validated = validateAndParse(data);
+```
+
+## Fonctions
+
+### Paramètres avec interface
+
+```typescript
+// ✅ BON - Interface pour paramètres complexes
+interface SearchStationsOptions {
+  query: string;
+  count?: number;
+  includeCoordinates?: boolean;
+}
+
+async function searchStations(options: SearchStationsOptions): Promise<Station[]> {
+  const { query, count = 10, includeCoordinates = false } = options;
+  // ...
+}
+
+// ❌ MAUVAIS - Trop de paramètres
+async function searchStations(
+  query: string,
+  count?: number,
+  includeCoordinates?: boolean,
+  includeDisruptions?: boolean,
+  language?: string
+): Promise<Station[]> { ... }
+```
+
+### Retours explicites
+
+```typescript
+// ✅ BON - Type de retour explicite
+export async function handleTool(params: ToolInput): Promise<ToolResponse> {
+  return {
+    content: [{ type: 'text', text: 'Result' }],
+    structuredContent: { /* ... */ },
+    _meta: { /* ... */ }
+  };
+}
+```
+
+## Null Safety
+
+### Optional chaining
+
+```typescript
+// ✅ BON
+const city = response?.station?.city;
+const platform = data?.departure?.platform ?? 'N/A';
+
+// Vérification avant usage
+if (response?.data) {
+  processData(response.data);
+}
+```
+
+### Nullish coalescing
+
+```typescript
+// ✅ BON - ?? pour valeurs nullish
+const count = params.count ?? 10;
+const platform = departure.platform ?? 'TBD';
+
+// ❌ MAUVAIS - || peut ignorer 0 ou ''
+const count = params.count || 10;  // 0 serait remplacé par 10
+```
+
+## Documentation
+
+### JSDoc pour fonctions exportées
+
+```typescript
+/**
+ * Recherche les gares SNCF correspondant à une requête
+ * 
+ * @param params - Paramètres de la requête
+ * @returns Liste des gares trouvées
+ * @throws {InvalidInputError} Si la requête est invalide
+ * @throws {APIError} Si l'API SNCF échoue
+ */
+export async function handleSearchStations(
+  params: SearchStationsInput
+): Promise<SearchStationsResult> {
+  // ...
+}
+```
+
+### Commentaires inline pour logique complexe
+
+```typescript
+// Calcul du temps de trajet avec correspondances
+// Formule: temps_direct + (nb_correspondances * temps_correspondance_moyen)
+const totalTime = directTime + (connections * AVG_CONNECTION_TIME);
+```
+
+## Checklist TypeScript
+
+- [ ] Imports avec extension `.js`
+- [ ] `import type` pour types purs
+- [ ] Pas de `any` (utiliser `unknown` + type guards)
+- [ ] Handlers async avec types de retour explicites
+- [ ] Erreurs avec classes du projet
+- [ ] Optional chaining et nullish coalescing
+- [ ] JSDoc sur fonctions exportées

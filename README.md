@@ -331,17 +331,43 @@ tchoutchou-mcp/
 
 ## 🛠️ Available Commands
 
-```bash
-# Development
-npm run dev              # Dev mode with hot-reload (stdio)
-npm run dev:http         # Dev mode HTTP server
+> 📖 **Full documentation**: [COMMANDS.md](./COMMANDS.md)
 
-# Production
-npm run build            # Compile server + UI
+### Quick Reference
+
+```bash
+# 🌟 Recommended for ChatGPT development (2 terminals)
+npm run tunnel           # Terminal 1: ngrok (keep running)
+npm run dev              # Terminal 2: Dev server with hot-reload
+
+# Alternative: All-in-one
+npm run dev:tunnel       # Dev + ngrok in parallel
+
+# Testing
+npm run inspect          # Launch MCP Inspector
+npm run health           # Health check
+
+# Build & Production
+npm run build            # Compile TypeScript + UI
 npm run build:ui         # Compile UI only
-npm run start            # Start stdio server
-npm run start:http       # Start HTTP server (port 3000)
+npm run rebuild          # Clean + Build
+npm run build:start      # Build then start
+
+# Utilities
+npm run kill             # Kill process on port 3000
+npm run kill:tunnel      # Kill ngrok
 ```
+
+### Cursor Commands
+
+Available via **Cmd+Shift+P**:
+- `dev-server` - Dev with hot-reload (recommended)
+- `tunnel-only` - Launch ngrok (keep running)
+- `mcp-inspector` - Launch MCP Inspector
+- `build` / `rebuild` / `clean`
+- `kill-server` / `kill-tunnel`
+
+See [COMMANDS.md](./COMMANDS.md) for the complete list.
 
 ---
 
@@ -427,6 +453,12 @@ Examples of possible additions:
 ---
 
 ## 📚 Resources & Documentation
+
+### Project Documentation
+
+- [CONTEXT.md](./CONTEXT.md) - Project memory (status, decisions, changelog)
+- [COMMANDS.md](./COMMANDS.md) - All npm scripts and Cursor commands
+- [OPENAI_APPS_SDK_REFERENCE.md](./OPENAI_APPS_SDK_REFERENCE.md) - Complete SDK reference guide
 
 ### Official documentation
 

@@ -1,0 +1,246 @@
+---
+description: Structure du projet SNCF MCP et conventions de fichiers
+globs: 
+  - src/**/*.ts
+alwaysApply: false
+---
+
+# Structure du Projet SNCF MCP
+
+## Architecture Globale
+
+```
+sncf-mcp/
+├── src/
+│   ├── index.ts               # Entry point principal
+│   ├── types.ts               # Types TypeScript partagés
+│   ├── http-server.ts         # Entry point HTTP
+│   ├── http-client.ts         # Client npm
+│   ├── client/                # Clients API externes
+│   │   ├── sncfApiClient.ts   # Client API SNCF
+│   │   └── nominatimClient.ts # Client Nominatim (géocodage)
+│   ├── tools/                 # Définitions des tools MCP
+│   │   ├── searchStations.ts
+│   │   ├── getDepartures.ts
+│   │   └── ...
+│   └── resources/             # Templates widgets HTML
+│       └── departures-widget.html
+├── web/                       # Frontend React (widgets)
+│   ├── src/
+│   └── dist/
+├── dist/                      # Code compilé (généré)
+├── package.json
+├── tsconfig.json
+└── README.md
+```
+
+## Responsabilités des Dossiers
+
+### `src/types.ts` - Types Partagés
+
+Types utilisés par plusieurs modules :
+
+```typescript
+// Types de configuration
+export interface ServerConfig { ... }
+
+// Types d'erreurs
+export enum ErrorCode { ... }
+export interface MCPError { ... }
+
+// Types métier partagés
+export interface Station { ... }
+export interface Departure { ... }
+```
+
+**Règles** :
+- ✅ Interfaces et types réutilisables uniquement
+- ✅ Enums pour valeurs contraintes
+- ❌ Pas de logique, uniquement des définitions de types
+
+### `src/client/` - Clients API Externes
+
+Abstraction des appels API externes :
+
+```typescript
+// src/client/sncfApiClient.ts
+export class SNCFApiClient {
+  private baseUrl: string;
+  
+  async searchStations(query: string): Promise<Station[]> {
+    // Logique d'appel API
+  }
+  
+  async getDepartures(stationId: string): Promise<Departure[]> {
+    // Logique d'appel API
+  }
+}
+```
+
+**Règles** :
+- ✅ Un fichier par API externe
+- ✅ Gestion des erreurs avec classes du projet
+- ✅ Retry logic si nécessaire
+- ✅ Types de retour bien définis
+
+### `src/tools/` - Tools MCP
+
+Chaque tool dans son propre fichier :
+
+```
+src/tools/
+├── searchStations.ts     # Tool recherche de gares
+├── getDepartures.ts      # Tool départs
+├── getArrivals.ts        # Tool arrivées
+├── getJourneys.ts        # Tool itinéraires
+└── placesNearby.ts       # Tool lieux à proximité
+```
+
+**Structure d'un tool** :
+
+```typescript
+// src/tools/searchStations.ts
+
+// 1. Imports
+import { InvalidInputError } from '../utils/errors.js';
+import { SNCFApiClient } from '../client/sncfApiClient.js';
+import type { SearchStationsInput, SearchStationsResult } from '../types.js';
+
+// 2. Définition du tool (export pour registration)
+export const searchStationsTool = {
+  name: 'search_stations',
+  title: 'Search Train Stations',
+  description: 'Use this when...',
+  inputSchema: { ... },
+  annotations: { ... },
+  _meta: { ... }
+};
+
+// 3. Handler (export pour registration)
+export async function handleSearchStations(
+  params: SearchStationsInput
+): Promise<SearchStationsResult> {
+  // Validation
+  // Logique métier
+  // Retour structuré
+}
+```
+
+### `src/resources/` - Templates Widgets
+
+Fichiers HTML pour les widgets ChatGPT :
+
+```
+src/resources/
+├── departures-widget.html   # Widget départs
+├── journeys-widget.html     # Widget itinéraires
+└── common/
+    └── styles.css           # Styles partagés (inliné au build)
+```
+
+**Règles** :
+- ✅ Un fichier HTML par widget
+- ✅ Tout CSS/JS inline
+- ✅ Nommage : `{feature}-widget.html`
+
+### `web/` - Frontend React
+
+Application React pour les widgets complexes :
+
+```
+web/
+├── src/
+│   ├── App.tsx
+│   ├── components/
+│   └── hooks/
+├── dist/           # Build production
+└── package.json
+```
+
+### `src/http-server.ts` - Serveur MCP
+
+Gère le protocole MCP HTTP :
+
+```typescript
+// Responsabilités :
+// - CORS headers
+// - Endpoint /mcp (JSON-RPC 2.0)
+// - Endpoint /health
+// - Registration des tools
+// - Routing des appels
+```
+
+**Règles** :
+- ✅ Délègue la logique aux handlers de tools
+- ✅ Gestion d'erreurs centralisée
+- ❌ Pas de logique métier directement ici
+
+## Conventions de Nommage
+
+### Fichiers
+
+| Type | Convention | Exemple |
+|------|------------|---------|
+| Tool | `{action}.ts` | `searchStations.ts` |
+| Client API | `{api-name}Client.ts` | `sncfApiClient.ts` |
+| Widget | `{feature}-widget.html` | `departures-widget.html` |
+| Types | `types.ts` | `types.ts` |
+| Index | `index.ts` | `index.ts` |
+
+### Exports
+
+```typescript
+// src/tools/index.ts
+export { searchStationsTool, handleSearchStations } from './searchStations.js';
+export { getDeparturesTool, handleGetDepartures } from './getDepartures.js';
+export * from './types.js';
+```
+
+## Imports
+
+### Ordre des imports
+
+```typescript
+// 1. Node.js built-ins
+import http from 'http';
+import fs from 'fs';
+
+// 2. Dépendances externes
+import { Server } from '@modelcontextprotocol/sdk/server/index.js';
+
+// 3. Imports internes (absolus depuis src/)
+import { getServerConfig } from '../config.js';
+import { InvalidInputError } from '../utils/errors.js';
+
+// 4. Imports relatifs (même module)
+import type { SearchStationsInput } from './types.js';
+```
+
+### Extension `.js` obligatoire
+
+```typescript
+// ✅ BON - Extension .js pour ESM
+import { getConfig } from './config.js';
+import { handleTool } from '../tools/searchStations.js';
+
+// ❌ MAUVAIS - Pas d'extension
+import { getConfig } from './config';
+```
+
+## Ajout d'un Nouveau Tool
+
+1. **Créer le fichier** : `src/tools/{toolName}.ts`
+2. **Définir** :
+   - Types spécifiques
+   - Définition du tool
+   - Handler
+3. **Enregistrer** dans `src/http-server.ts`
+4. **Créer le widget** (si nécessaire) : `src/resources/{feature}-widget.html`
+
+## Checklist Nouveau Fichier
+
+- [ ] Emplacement correct selon le type
+- [ ] Nommage respecte les conventions
+- [ ] Imports avec extension `.js`
+- [ ] Types exportés si réutilisables
+- [ ] Export dans le fichier approprié

@@ -1,0 +1,239 @@
+---
+description: Workflow de développement et commandes pour SNCF MCP
+globs: 
+alwaysApply: false
+---
+
+# Workflow de Développement - SNCF MCP
+
+## Prérequis
+
+- **Node.js** >= 18.0.0
+- **npm** ou **pnpm**
+- **ngrok** (pour tests ChatGPT en local)
+
+## Commandes Disponibles
+
+### Développement
+
+```bash
+npm run dev              # Dev mode avec hot-reload (kill auto le port avant)
+npm run dev:http         # Alias pour dev
+npm run dev:tunnel       # Dev + ngrok en parallèle (recommandé pour ChatGPT)
+```
+
+### Build
+
+```bash
+npm run build            # Compile TypeScript → dist/
+npm run clean            # Supprime dist/
+npm run rebuild          # Clean + build
+```
+
+### Production
+
+```bash
+npm run start            # Lance le serveur (kill auto le port avant)
+npm run start:http       # Alias pour start
+npm run build:start      # Build puis start
+```
+
+### Utilitaires
+
+```bash
+npm run kill             # Kill le process sur le port (défaut: 3000)
+npm run kill:tunnel      # Kill ngrok
+npm run tunnel           # Lance ngrok sur le port
+npm run inspect          # Lance MCP Inspector
+npm run health           # Test le health check (requiert jq)
+```
+
+### Variables d'environnement pour les commandes
+
+Les commandes utilisent `$PORT` (défaut: 3000) :
+
+```bash
+PORT=8080 npm run dev           # Dev sur port 8080
+PORT=8080 npm run tunnel        # Tunnel sur port 8080
+PORT=8080 npm run inspect       # Inspect sur port 8080
+```
+
+## Workflow de Développement
+
+### Workflow recommandé (ChatGPT + ngrok)
+
+**Lancer ngrok une fois et le laisser tourner** (évite de reconfigurer ChatGPT à chaque fois) :
+
+```bash
+# Terminal 1 - Tunnel ngrok (lancer une fois, garder ouvert)
+npm run tunnel
+# → Copier l'URL: https://abc123.ngrok-free.dev/mcp
+# → Configurer cette URL dans ChatGPT (une seule fois)
+
+# Terminal 2 - Serveur dev (relancer autant que nécessaire)
+npm run dev
+```
+
+Via Cursor :
+- **Cmd+Shift+P** → `tunnel-only` (Terminal 1)
+- **Cmd+Shift+P** → `dev-server` (Terminal 2)
+
+> 💡 **Astuce** : L'URL ngrok reste la même tant que le tunnel tourne. Pas besoin de reconfigurer ChatGPT !
+
+### Workflow alternatif (tout-en-un)
+
+Si tu préfères une seule commande (mais ngrok redémarre à chaque fois) :
+
+```bash
+npm run dev:tunnel
+```
+
+ou via Cursor : **Cmd+Shift+P** → `dev-with-tunnel`
+
+### Test local sans ChatGPT
+
+```bash
+# Terminal 1 - Serveur
+npm run dev
+
+# Terminal 2 - MCP Inspector
+npm run inspect
+```
+
+MCP Inspector permet de :
+- Lister les tools disponibles
+- Appeler les tools avec des paramètres
+- Voir les réponses structurées
+- Débugger sans ChatGPT
+
+### Quick health check
+
+```bash
+npm run health
+# Retourne: { "status": "ok", "service": "sncf-mcp", "version": "X.Y.Z" }
+```
+
+### 4. Configuration ChatGPT
+
+1. **Settings** → **Apps & Connectors**
+2. **Advanced Settings** → Enable **Developer mode**
+3. **Create** → Nouvelle application
+4. **Server URL** : URL ngrok + `/mcp`
+5. **Create**
+
+**Important** : Après chaque modification du serveur, **Refresh** le connector dans ChatGPT.
+
+## Variables d'Environnement
+
+Créer un fichier `.env` à la racine :
+
+```bash
+# Port du serveur HTTP
+PORT=3000
+
+# Environnement (development | production | test)
+NODE_ENV=development
+
+# CORS origin
+# - development: '*' (permissif)
+# - production: 'https://chatgpt.com' (restrictif)
+CORS_ORIGIN=*
+
+# API Keys (selon les services utilisés)
+SNCF_API_KEY=your_api_key_here
+```
+
+## Endpoints Disponibles
+
+| Endpoint | Méthode | Description |
+|----------|---------|-------------|
+| `/mcp` | GET | Discovery MCP (liste des tools) |
+| `/mcp` | POST | JSON-RPC 2.0 (appels de tools) |
+| `/health` | GET/HEAD | Health check |
+
+### Test manuel avec curl
+
+```bash
+# Health check
+curl http://localhost:3000/health
+
+# Discovery
+curl http://localhost:3000/mcp
+
+# Appel tool (JSON-RPC)
+curl -X POST http://localhost:3000/mcp \
+  -H "Content-Type: application/json" \
+  -d '{
+    "jsonrpc": "2.0",
+    "id": 1,
+    "method": "tools/call",
+    "params": {
+      "name": "search_stations",
+      "arguments": { "query": "Paris" }
+    }
+  }'
+```
+
+## Debugging
+
+### Logs serveur
+
+Le serveur log automatiquement les requêtes MCP :
+
+```
+[MCP] tools/list
+[MCP] tools/call {"name":"search_stations","arguments":{"query":"Paris"}}
+```
+
+### Erreurs courantes
+
+| Erreur | Cause | Solution |
+|--------|-------|----------|
+| `EADDRINUSE` | Port déjà utilisé | Changer `PORT` ou kill le process |
+| `CORS error` | Origin bloqué | Vérifier `CORS_ORIGIN` |
+| `Tool not found` | Tool non enregistré | Vérifier le routing dans `http.ts` |
+| `Cannot find module` | Import sans `.js` | Ajouter `.js` aux imports |
+
+### Debug détaillé
+
+Ajouter des logs temporaires :
+
+```typescript
+console.log('[DEBUG] Tool params:', JSON.stringify(params, null, 2));
+console.log('[DEBUG] API response:', response.status);
+```
+
+## Build Production
+
+```bash
+# 1. Build
+npm run build
+
+# 2. Vérifier dist/
+ls -la dist/
+
+# 3. Test du build
+npm run start
+
+# 4. Vérifier
+curl http://localhost:3000/health
+```
+
+## Déploiement
+
+### Plateformes recommandées
+
+- **Railway** - Déploiement automatique depuis GitHub
+- **Render** - Service managé avec SSL gratuit
+- **Fly.io** - Edge computing global
+- **Google Cloud Run** - Serverless avec scaling auto
+
+### Checklist pré-déploiement
+
+- [ ] `npm run build` sans erreur
+- [ ] Variables d'environnement configurées
+- [ ] `NODE_ENV=production`
+- [ ] `CORS_ORIGIN=https://chatgpt.com`
+- [ ] Health check fonctionnel
+- [ ] Tous les tools testés
+- [ ] Logs sans données sensibles

@@ -21,10 +21,20 @@
   "scripts": {
     "build": "tsc && npm run build:ui",
     "build:ui": "cd web && npm run build",
-    "dev": "tsx watch src/index.ts",
-    "dev:http": "tsx watch src/http-server.ts",
-    "start": "node dist/index.js",
-    "start:http": "node dist/http-server.js",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist",
+    "rebuild": "npm run clean && npm run build",
+    "dev": "npm run kill --silent; tsx watch src/http-server.ts",
+    "dev:http": "npm run dev",
+    "dev:tunnel": "npm run kill:tunnel --silent; npm-run-all --parallel dev tunnel",
+    "start": "npm run kill --silent; node dist/http-server.js",
+    "start:http": "npm run start",
+    "build:start": "npm run build && npm run start",
+    "kill": "lsof -ti:${PORT:-3000} | xargs kill -9 2>/dev/null || true",
+    "kill:tunnel": "pkill -f ngrok 2>/dev/null || true",
+    "tunnel": "ngrok http ${PORT:-3000}",
+    "inspect": "npx @modelcontextprotocol/inspector@latest http://localhost:${PORT:-3000}/mcp",
+    "health": "curl -s http://localhost:${PORT:-3000}/health | jq .",
     "prepare": "npm run build"
   },
   "dependencies": {
@@ -34,6 +44,7 @@
   },
   "devDependencies": {
     "@types/node": "^20.10.0",
+    "npm-run-all": "^4.1.5",
     "tsx": "^4.7.0",
     "typescript": "^5.3.0"
   }

@@ -1,0 +1,204 @@
+---
+description: Structure des réponses d'outils MCP pour ChatGPT Apps SDK
+globs: 
+  - src/tools/**/*.ts
+  - src/servers/**/*.ts
+alwaysApply: false
+---
+
+# OpenAI Apps SDK - Structure des Réponses
+
+## Anatomie d'une Réponse Tool
+
+```typescript
+{
+  // 1. CONTENT - Narration pour le modèle ET l'utilisateur
+  content: [{
+    type: 'text',
+    text: 'Markdown narration visible dans le chat'
+  }],
+
+  // 2. STRUCTURED CONTENT - JSON léger visible par widget ET modèle
+  // ⚠️ CRITIQUE: Impacte les performances si trop gros
+  structuredContent: {
+    type: 'trainDepartures',
+    summary: 'Prochains trains depuis Paris Gare de Lyon',
+    items: [/* données concises */]
+  },
+
+  // 3. _META - Données riches JAMAIS vues par le modèle
+  _meta: {
+    'openai/outputTemplate': 'template://departures-widget',
+    'openai/closeWidget': false,
+    fullDetails: {/* données complètes */},
+    rawApiResponse: {/* données brutes API */}
+  }
+}
+```
+
+## Les 3 Parties Expliquées
+
+### 1. `content` - Narration
+
+**Usage**: Texte markdown affiché dans le chat, visible par utilisateur ET modèle.
+
+```typescript
+content: [{
+  type: 'text',
+  text: `## Prochains départs Paris Gare de Lyon
+  
+🚄 TGV 6201 → Lyon Part-Dieu - 14:30
+🚄 TGV 6203 → Marseille - 14:45
+
+*Données en temps réel*`
+}]
+```
+
+**Règles**:
+- ✅ Markdown pour formattage
+- ✅ Résumé concis des résultats
+- ✅ Utilisé comme fallback si widget fail
+- ❌ Pas de données sensibles
+
+### 2. `structuredContent` - Données pour Widget + Modèle
+
+**Usage**: JSON structuré que le widget utilise pour render ET que le modèle peut raisonner dessus.
+
+```typescript
+structuredContent: {
+  type: 'departures',
+  station: { name: 'Paris Gare de Lyon', code: 'PAGL' },
+  departures: [
+    { train: 'TGV 6201', destination: 'Lyon', time: '14:30', platform: '5' },
+    { train: 'TGV 6203', destination: 'Marseille', time: '14:45', platform: '12' }
+  ]
+}
+```
+
+**Règles CRITIQUES**:
+- ✅ **Garder léger** : < 4k tokens idéalement
+- ✅ Données essentielles uniquement
+- ✅ Structure simple et plate
+- ❌ **Pas de données volumineuses** (images base64, logs, etc.)
+- ❌ **Pas de données sensibles** (tokens, credentials)
+
+> ⚠️ "Oversized payloads degrade model performance" - OpenAI
+
+### 3. `_meta` - Données Riches (Widget Only)
+
+**Usage**: Données complètes que SEUL le widget voit. Le modèle n'y a JAMAIS accès.
+
+```typescript
+_meta: {
+  // Métadonnées système
+  'openai/outputTemplate': 'template://departures-widget',
+  'openai/closeWidget': false,
+  'openai/widgetSessionId': 'session-abc123',
+
+  // Données riches pour le widget
+  fullSchedule: {
+    allDepartures: [/* tous les départs détaillés */],
+    delays: [/* informations de retard */]
+  },
+  
+  // Données de debug/traçabilité
+  apiRequestId: 'req_xyz789',
+  processingTime: 245
+}
+```
+
+**Règles**:
+- ✅ Données volumineuses ici
+- ✅ Données détaillées pour rich UI
+- ✅ Métadonnées de debug
+- ❌ Le modèle ne voit JAMAIS `_meta`
+
+## Pattern de Réponse Complet
+
+```typescript
+async function handleDeparturesTool(params: DeparturesInput): Promise<ToolResponse> {
+  // 1. Récupérer les données
+  const apiData = await fetchSNCFAPI(params.station);
+  
+  // 2. Construire la réponse
+  return {
+    // Narration markdown (fallback + contexte)
+    content: [{
+      type: 'text',
+      text: buildDeparturesNarration(apiData)
+    }],
+    
+    // Données structurées LÉGÈRES pour widget + modèle
+    structuredContent: {
+      type: 'departures',
+      station: apiData.station.name,
+      departures: apiData.departures.slice(0, 5).map(dep => ({
+        train: dep.trainNumber,
+        destination: dep.destination,
+        time: dep.scheduledTime,
+        platform: dep.platform
+      }))
+    },
+    
+    // Données riches pour widget uniquement
+    _meta: {
+      'openai/outputTemplate': 'template://departures-widget',
+      'openai/widgetAccessible': true,
+      
+      // Données complètes que le modèle ne voit pas
+      fullApiResponse: apiData,
+      allDepartures: apiData.departures,
+      disruptions: apiData.disruptions || []
+    }
+  };
+}
+```
+
+## Anti-Patterns à Éviter
+
+### ❌ structuredContent trop gros
+
+```typescript
+// ❌ MAUVAIS - Données volumineuses dans structuredContent
+structuredContent: {
+  allStations: [/* 100 gares avec détails */],
+  historicalData: [/* 30 jours d'historique */],
+  rawApiResponse: {/* réponse API complète */}
+}
+```
+
+### ❌ Données sensibles dans content/structuredContent
+
+```typescript
+// ❌ MAUVAIS - Token visible par le modèle
+structuredContent: {
+  apiToken: 'secret_key_123',
+  userId: 'user_internal_id'
+}
+```
+
+### ✅ Pattern correct
+
+```typescript
+// ✅ BON - Séparation claire
+structuredContent: {
+  summary: 'Prochains trains Paris → Lyon',
+  items: [/* 3-5 items essentiels */]
+},
+_meta: {
+  fullData: {/* données complètes */},
+  credentials: {/* si absolument nécessaire */}
+}
+```
+
+## Checklist Réponse
+
+Avant de retourner une réponse :
+
+- [ ] `content` contient un résumé markdown lisible
+- [ ] `structuredContent` est **léger** (< 4k tokens)
+- [ ] `structuredContent` ne contient que l'essentiel
+- [ ] Données volumineuses dans `_meta`
+- [ ] Pas de données sensibles dans `content`/`structuredContent`
+- [ ] `_meta['openai/outputTemplate']` si widget
+- [ ] Types de réponse bien définis
